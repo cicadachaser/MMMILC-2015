@@ -4,11 +4,5 @@
 rm(list=ls())
 graphics.off()
 
-#testing
-
-library("ggplot2")
-
-#marshall test push
-
-#comment test
+#testing 2016-01-08
 
