@@ -42,9 +42,9 @@ trip$week<-(trip$project.day-1) %/% 7+1
 #any observations 0 percent.green, but ALIVE status. replace with DEAD
 data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , ]
 "DEAD" <- data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"]
-
+data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") ,] 
 #observations with 0 or only numeric in stage.length field. set to none.
-grep("^[0-9]*$", data$stage.length)
+data[grep("^[0-9]*$", data$stage.length), ]
 data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 
 #make any version of NONE, None, etc -> "none"
@@ -59,10 +59,25 @@ data$nLarvae <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) 
 #add number of larvae column
 data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 
-#gather lengths in each larval category
+#add L class specific counts
+
+#gather lengths in each larval class
+
+#gather all lengths together in one list
+#enter datasheet
+
+###plots
+#average larval length by week
+#egg count by week
+#larvae count by week
+#monarch load (egg + larve\ae) by week
+
+#cumulative versions by day (monarchs per plant on plants observed)
+
 #L3 category
 L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
 
+mean(unlist(c(list(1), list(c(1,2)))))
 
 lapply(L3list, function(x) strsplit("-", x)[2])
 
