@@ -5,11 +5,12 @@ rm(list=ls())
 graphics.off()
 pardefault <- par(no.readonly = T)
 
+#load packages, se function
 library(ggplot2)
-
 std.err <- function(x) sd(x)/sqrt(length(x))
 
-#setwd("C:\\Users\\lhyang\\Dropbox\\Milkweeds and Monarchs\\The MMMILC Project") #laptop
+#setwd("C:\\Users\\lhyang\\Dropbox\\Milkweeds and Monarchs\\The MMMILC Project") #louie laptop
+#setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 
 trip<-read.csv("trip 2016-01-13.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
@@ -37,10 +38,23 @@ trip$julian.date<-as.integer(julian(trip$date, origin=as.Date("2015-01-01")))
 trip$project.day<-trip$julian.date-min(trip$julian.date)+1
 trip$week<-(trip$project.day-1) %/% 7+1
 
+#data cleaning
+#any observations 0 percent.green, but ALIVE status. replace with DEAD
+data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , ]
+"DEAD" <- data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"]
+
+#observations with 0 or only numeric in stage.length field. set to none.
+grep("^[0-9]*$", data$stage.length)
+data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
+
+#make any version of NONE, None, etc -> "none"
+data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
+
+unique(data$stage.length)
+
 
 #plot of milkweed.count by week
 milkweed.count.by.week<-aggregate(milkweed.count~week,sum,data=trip);milkweed.count.by.week
-
 p1 <- ggplot(milkweed.count.by.week, aes(x=week, y=milkweed.count))
 p1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 400))+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("milkweed count from the trip log")
 
