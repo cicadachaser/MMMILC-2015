@@ -50,7 +50,25 @@ data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 #make any version of NONE, None, etc -> "none"
 data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
 
-unique(data$stage.length)
+#split the stage length field
+split <- strsplit(as.character(data$stage.length), split = ",")
+
+#add number of larvae column
+data$nLarvae <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) )
+
+#add number of larvae column
+data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
+
+#gather lengths in each larval category
+#L3 category
+L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
+
+
+lapply(L3list, function(x) strsplit("-", x)[2])
+
+L3list[381]
+
+unlist(lapply(L3list, length))
 
 
 #plot of milkweed.count by week
