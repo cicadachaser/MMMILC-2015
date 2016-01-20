@@ -54,14 +54,34 @@ data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
 split <- strsplit(as.character(data$stage.length), split = ",")
 
 #add number of larvae column
-data$nLarvae <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) )
+data$nLTotal <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) )
 
 #add number of larvae column
 data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 
 #add L class specific counts
+data$nL1 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][1]", x) ) ) ) ) )
+data$nL2 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][2]", x) ) ) ) ) )
+data$nL3 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][3]", x) ) ) ) ) )
+data$nL4 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][4]", x) ) ) ) ) )
+data$nL5 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][5]", x) ) ) ) ) )
+
+#check if sum of larval class counts is equal to total larvae.
+which(data$nLTotal!=rowSums(cbind(data$nL1, data$nL2, data$nL3, data$nL4, data$nL5)))
 
 #gather lengths in each larval class
+#impute averages
+#L3 category
+L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
+
+unique(L3list)
+mean(unlist(c(list(1), list(c(1,2)))))
+
+unique(lapply(L3list, function(x) strsplit("-", x)))
+
+unlist(lapply(L3list, length))
+
+
 
 #gather all lengths together in one list
 #enter datasheet
@@ -74,16 +94,6 @@ data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 
 #cumulative versions by day (monarchs per plant on plants observed)
 
-#L3 category
-L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
-
-mean(unlist(c(list(1), list(c(1,2)))))
-
-lapply(L3list, function(x) strsplit("-", x)[2])
-
-L3list[381]
-
-unlist(lapply(L3list, length))
 
 
 #plot of milkweed.count by week
