@@ -14,7 +14,7 @@ std.err <- function(x) sd(x)/sqrt(length(x))
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 
 trip<-read.csv("trip 2016-01-13.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
-data<-read.csv("data 2016-01-13.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
+data<-read.csv("data 2016-01-21.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
 
 data$milkweed.status<-as.character(data$milkweed.status)
 
@@ -50,13 +50,15 @@ data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 #make any version of NONE, None, etc -> "none"
 data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
 
-#split the stage length field
+
+##dealing with the stage.length field
+#split the field by commas
 split <- strsplit(as.character(data$stage.length), split = ",")
 
 #add number of larvae column
 data$nLTotal <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) )
 
-#add number of larvae column
+#add number of eggs column
 data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 
 #add L class specific counts
@@ -69,22 +71,34 @@ data$nL5 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][5]", x)
 #check if sum of larval class counts is equal to total larvae.
 which(data$nLTotal!=rowSums(cbind(data$nL1, data$nL2, data$nL3, data$nL4, data$nL5)))
 
-#gather lengths in each larval class
-#impute averages
+
 #L3 category
+#list all the locations of L3's
 L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
 
-unique(L3list)
-mean(unlist(c(list(1), list(c(1,2)))))
+#split each match by hyphen
+L3lengths <- lapply(L3list, function(y) sapply(strsplit(y, "-"),  function (x) x[2]))
+
+#mean of L3's
+L3mean <- mean(as.numeric(unlist(L3lengths)), na.rm=TRUE)
+
+#impute all "L3" without lengths (these are NA's instead of empty lists)
+data$L3lengths <- rapply(L3lengths, f=function(x) ifelse(is.na(x) , L3mean, as.numeric(x)), how = "replace")
+
+
+
+
+head(data)
+L3lengths[[1]]
+do.call(rbind.data.frame, data$L3lengths)
+is.null(data$L3lengths)
 
 unique(lapply(L3list, function(x) strsplit("-", x)))
 
 unlist(lapply(L3list, length))
-
-
-
+#gather lengths in each larval class
+#impute averages
 #gather all lengths together in one list
-#enter datasheet
 
 ###plots
 #average larval length by week
