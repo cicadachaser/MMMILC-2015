@@ -9,9 +9,9 @@ pardefault <- par(no.readonly = T)
 library(ggplot2)
 std.err <- function(x) sd(x)/sqrt(length(x))
 
-#setwd("C:\\Users\\lhyang\\Dropbox\\Milkweeds and Monarchs\\The MMMILC Project") #louie laptop
 #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
-setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
+#setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
+setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
 
 trip<-read.csv("trip 2016-01-13.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
 data<-read.csv("data 2016-01-21.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
@@ -23,7 +23,6 @@ trip$date<-as.Date(trip$date, "%m/%d/%Y")
 
 #order by date, then by milkweed.ID
 data<-data[order(data$date, data$milkweed.ID),]
-
 
 #exclude training data
 data<-data[data$date>"2015-04-26",]
@@ -79,10 +78,10 @@ L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
 #split each match by hyphen
 L3lengths <- lapply(L3list, function(y) sapply(strsplit(y, "-"),  function (x) x[2]))
 
-#mean of L3's
+#mean of all reported L3's in the dataset
 L3mean <- mean(as.numeric(unlist(L3lengths)), na.rm=TRUE)
 
-#impute all "L3" without lengths (these are NA's instead of empty lists)
+#impute all "L3" without lengths (these are NA's instead of empty lists), replaces missing data with global mean for each instar
 data$L3lengths <- rapply(L3lengths, f=function(x) ifelse(is.na(x) , L3mean, as.numeric(x)), how = "replace")
 
 
