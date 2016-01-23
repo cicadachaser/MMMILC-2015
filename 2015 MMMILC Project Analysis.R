@@ -7,6 +7,7 @@ pardefault <- par(no.readonly = T)
 
 #load packages, se function
 library(ggplot2)
+library(plyr)
 std.err <- function(x) sd(x)/sqrt(length(x))
 
 #setwd("C:\\Users\\lhyang\\Dropbox\\Milkweeds and Monarchs\\The MMMILC Project") #louie laptop
@@ -61,6 +62,9 @@ data$nLTotal <- unlist(lapply(split,  function(x) sum((grepl("[L1-5]", x) ) ) ) 
 #add number of eggs column
 data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 
+#add monarch load column
+data$monarchLoad <- data$nLTotal + data$nEggs
+
 #add L class specific counts
 data$nL1 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][1]", x) ) ) ) ) )
 data$nL2 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][2]", x) ) ) ) ) )
@@ -71,44 +75,41 @@ data$nL5 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][5]", x)
 #check if sum of larval class counts is equal to total larvae.
 which(data$nLTotal!=rowSums(cbind(data$nL1, data$nL2, data$nL3, data$nL4, data$nL5)))
 
+#a function to collect all measurements by instar, impute all missing L measurements according to instar, convert all to numeric
+impute.for.instar <- function(instar.number, split.list = split){
+  #get all matches for a particular instar
+  Llist <- lapply(split,  function(x) x[grep(paste("[L][",instar.number,"]", sep = ""), x)] )
+  #split each match by hyphen, and take the second part, the measurement. 
+  #note: if no length measurement given but L# present, results NA
+  Llengths <- lapply(Llist, function(y) sapply(strsplit(y, "-"),  function (x) x[2]))
+  #mean of this instar
+  Lmean <- mean(as.numeric(unlist(Llengths)), na.rm=TRUE)
+  #impute all "L#" without lengths (these are NA's instead of empty lists)
+  Llengths <- rapply(Llengths, f=function(x) ifelse(is.na(x) , Lmean, as.numeric(x)), how = "replace")
+  invisible(Llengths)
+}
 
-#L3 category
-#list all the locations of L3's
-L3list <- lapply(split,  function(x) x[grep("[L][3]", x)] )
+#impute all "L#" and convert to numerics within lists
+data$L1lengths <- impute.for.instar(1)
+data$L2lengths <- impute.for.instar(2)
+data$L3lengths <- impute.for.instar(3)
+data$L4lengths <- impute.for.instar(4)
+data$L5lengths <- impute.for.instar(5)
 
-#split each match by hyphen
-L3lengths <- lapply(L3list, function(y) sapply(strsplit(y, "-"),  function (x) x[2]))
+###########
+##plots
 
-#mean of L3's
-L3mean <- mean(as.numeric(unlist(L3lengths)), na.rm=TRUE)
-
-#impute all "L3" without lengths (these are NA's instead of empty lists)
-data$L3lengths <- rapply(L3lengths, f=function(x) ifelse(is.na(x) , L3mean, as.numeric(x)), how = "replace")
-
-
-
-
-head(data)
-L3lengths[[1]]
-do.call(rbind.data.frame, data$L3lengths)
-is.null(data$L3lengths)
-
-unique(lapply(L3list, function(x) strsplit("-", x)))
-
-unlist(lapply(L3list, length))
-#gather lengths in each larval class
-#impute averages
-#gather all lengths together in one list
-
-###plots
-#average larval length by week
-#egg count by week
-#larvae count by week
-#monarch load (egg + larve\ae) by week
-
-#cumulative versions by day (monarchs per plant on plants observed)
-
-
+#a function to add data to density graph, both density estimate and points
+add.plot.instar.data <- function(unlisted.instar.length, color = 1) {
+  lines(density(unlisted.instar.length) , lwd = 2, col = color)
+  points(unlisted.instar.length, y=rep(0,length(unlisted.instar.length) ) , col=color) }
+#plot larval lengths by instar
+plot(1,1,type="n", xlim = c(0,60), ylim = c(0,.25), main = "larval lengths by instar", xlab = "length (mm)", ylab ="frequency")
+add.plot.instar.data(unlist(data$L1lengths), 1)
+add.plot.instar.data(unlist(data$L2lengths), 2)
+add.plot.instar.data(unlist(data$L3lengths), 3)
+add.plot.instar.data(unlist(data$L4lengths), 4)
+add.plot.instar.data(unlist(data$L5lengths), 5)
 
 #plot of milkweed.count by week
 milkweed.count.by.week<-aggregate(milkweed.count~week,sum,data=trip);milkweed.count.by.week
@@ -138,7 +139,6 @@ data$total.stem.area<-data$stem.count*data$mean.dia^2*pi
 
 #plant size by week
 total.stem.len.by.week<-aggregate(total.stem.len~week,function(x) c(mean=mean(x),se=std.err(x)),data=data);total.stem.len.by.week
-
 total.stem.area.by.week<-aggregate(total.stem.area~week,function(x) c(mean=mean(x),se=std.err(x)),data=data);total.stem.area.by.week
 
 #plant growth
@@ -149,6 +149,62 @@ p3+geom_point(size=6,col="forestgreen")+geom_line()+scale_x_continuous(breaks=c(
 p3.1.limits <- aes(ymax = total.stem.area[,"mean"] + total.stem.area[,"se"], ymin=total.stem.area[,"mean"] - total.stem.area[,"se"])
 p3.1<-ggplot(total.stem.area.by.week,aes(x=week,y=total.stem.area[,"mean"]))
 p3.1+geom_point(size=6,col="forestgreen")+geom_line()+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("total stem area per plant (sq mm)")+geom_errorbar(p3.1.limits, width=0.2)
+
+
+#plot egg counts by week and cumulative by day
+eggs.by.week<-aggregate(nEggs~week,sum,data=data)
+p4.1 <- ggplot(eggs.by.week, aes(x=week, y=nEggs))
+p4.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Eggs per week")
+
+eggs.by.day <- aggregate(nEggs ~ julian.date,sum, data = data)
+cum.eggs.by.day <- eggs.by.day
+cum.eggs.by.day[,2] <- cumsum(eggs.by.day$nEggs) / sum(eggs.by.day$nEggs) 
+with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
+
+
+#plot larvae counts by week and cumulative by day
+larvae.by.week<-aggregate(nLTotal~week,sum,data=data)
+p5.1 <- ggplot(larvae.by.week, aes(x=week, y=nLTotal))
+p5.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Larvae per week")
+
+larvae.by.day <- aggregate(nLTotal ~ julian.date,sum, data = data)
+cum.larvae.by.day <- larvae.by.day
+cum.larvae.by.day[,2] <- cumsum(cum.larvae.by.day$nLTotal) / sum(cum.larvae.by.day$nLTotal) 
+with(cum.larvae.by.day, plot(julian.date, nLTotal, type = "l"))
+
+#plot egg + larvae counts by week
+monarch.by.week<-aggregate(monarchLoad~week,sum,data=data)
+p6.1 <- ggplot(monarch.by.week, aes(x=week, y=monarchLoad))
+p6.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Monarch per week")
+
+
+
+#plot phenology-ontogeny landscape
+cut(data$date, "2 weeks")
+
+head(data$L3lengths)
+
+head(data)
+L3lengths[[1]]
+do.call(rbind.data.frame, data$L3lengths)
+is.null(data$L3lengths)
+
+unique(lapply(L3list, function(x) strsplit("-", x)))
+
+unlist(lapply(L3list, length))
+
+#gather all lengths together in one list
+#update trip.csv
+
+###plots
+#average larval length by week
+#cumulative versions by day (monarchs per plant on plants observed)
+
+
+
 
 #mapping and spatial analysis
 
