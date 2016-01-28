@@ -176,17 +176,17 @@ p4.1 <- ggplot(eggs.by.week, aes(x=week, y=nEggs))
 p4.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
   scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Eggs per week")
 
-eggs.by.day <- aggregate(nEggs ~ julian.date,sum, data = data)
-cum.eggs.by.day <- eggs.by.day
-cum.eggs.by.day[,2] <- cumsum(eggs.by.day$nEggs) / sum(eggs.by.day$nEggs) 
-with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
-
-
 #plot larvae counts by week and cumulative by day
 larvae.by.week<-aggregate(nLTotal~week,sum,data=data)
 p5.1 <- ggplot(larvae.by.week, aes(x=week, y=nLTotal))
 p5.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
   scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Larvae per week")
+
+#plot egg + larvae counts by week
+monarch.by.week<-aggregate(monarchLoad~week,sum,data=data)
+p6.1 <- ggplot(monarch.by.week, aes(x=week, y=monarchLoad))
+p6.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Monarch per week")
 
 #cumulative larvae by day
 larvae.by.day <- aggregate(nLTotal ~ julian.date,sum, data = data)
@@ -199,12 +199,6 @@ eggs.by.day <- aggregate(nEggs ~ julian.date,sum, data = data)
 cum.eggs.by.day <- eggs.by.day
 cum.eggs.by.day[,2] <- cumsum(cum.eggs.by.day$nEggs) / sum(cum.eggs.by.day$nEggs) 
 with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
-
-#plot egg + larvae counts by week
-monarch.by.week<-aggregate(monarchLoad~week,sum,data=data)
-p6.1 <- ggplot(monarch.by.week, aes(x=week, y=monarchLoad))
-p6.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
-  scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Monarch per week")
 
 
 #plot phenology-ontogeny landscape plotting function
