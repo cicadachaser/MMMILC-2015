@@ -97,8 +97,7 @@ data$L5lengths <- impute.for.instar(5)
 
 #make column for all lengths
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
-data$Lengths <- lapply(Llist, unlist)
-
+data$catLengths <- lapply(Llist, unlist)
 
 ###########
 ##plots
@@ -116,16 +115,11 @@ add.plot.instar.data(unlist(data$L4lengths), 4)
 add.plot.instar.data(unlist(data$L5lengths), 5)
 
 
-
-#gather lengths in each larval class
-#impute averages
-#gather all lengths together in one list
-
 ###plots
 #average larval length by week
 #egg count by week
 #larvae count by week
-#monarch load (egg + larve\ae) by week
+#monarch load (egg + larveae) by week
 
 #cumulative versions by day (monarchs per plant on plants observed)
 
@@ -203,10 +197,10 @@ with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
 
 #plot phenology-ontogeny landscape plotting function
 phen.ont.landscape <- function(interval.as.char){
-    cat.length <- tapply(data$Lengths ,  cut(data$date, interval.as.char) ,    
+    cat.length <- tapply(data$catLengths ,  cut(data$date, interval.as.char) ,    
                          function(x) mean(as.numeric(unlist(x)), na.rm=TRUE))
     
-    cat.se <-  tapply(data$Lengths ,  cut(data$date, interval.as.char) ,    
+    cat.se <-  tapply(data$catLengths ,  cut(data$date, interval.as.char) ,    
                       function(x) std.err(as.numeric(unlist(x))))
     
     plant.area <- tapply(data$total.stem.area ,  cut(data$date, interval.as.char) ,    
@@ -214,6 +208,9 @@ phen.ont.landscape <- function(interval.as.char){
     
     plant.se <-  tapply(data$total.stem.area ,  cut(data$date, interval.as.char) ,    
                       function(x) std.err(as.numeric(x)))
+    
+    plot(as.Date(names(cat.length)), cat.length, type = "b", pch = 16, xlab = "date")
+    plot(as.Date(names(plant.area)), plant.area, type = "b", pch = 16, xlab = "date")
     
     plot(cat.length, plant.area, xlim = c(0, 35), ylim = c(0, 450), type = "b", 
                       main = paste("phenology-ontogeny: ", interval.as.char, sep = ""))
@@ -225,8 +222,12 @@ phen.ont.landscape <- function(interval.as.char){
 
 phen.ont.landscape("1 weeks")
 phen.ont.landscape("2 weeks")
+phen.ont.landscape("3 weeks")
 phen.ont.landscape("4 weeks")
 phen.ont.landscape("6 weeks")
+
+unique(data$catLengths)
+rapply(data$catLengths, function(x) x[x<5])
 
 #update trip.csv
 
