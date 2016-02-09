@@ -14,8 +14,8 @@ setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
 
-trip<-read.csv("trip 2016-01-13.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
-data<-read.csv("data 2016-01-21.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
+trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
+data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
 
 data$milkweed.status<-as.character(data$milkweed.status)
 
@@ -98,6 +98,10 @@ data$L5lengths <- impute.for.instar(5)
 #make column for all lengths
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
 data$catLengths <- lapply(Llist, unlist)
+
+
+sort(unique(data$name))
+
 
 ###########
 ##plots
@@ -185,13 +189,24 @@ p6.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='das
 #cumulative larvae by day
 larvae.by.day <- aggregate(nLTotal ~ julian.date,sum, data = data)
 cum.larvae.by.day <- larvae.by.day
-cum.larvae.by.day[,2] <- cumsum(cum.larvae.by.day$nLTotal) / sum(cum.larvae.by.day$nLTotal) 
+cum.larvae.by.day[,2] <- cumsum(cum.larvae.by.day$nLTotal) 
 with(cum.larvae.by.day, plot(julian.date, nLTotal, type = "l"))
+#add lines for each instar
+#fill in polygons to represent instar abundance
+
+#cumulative L1
+L1.by.day <- aggregate(nL1 ~ julian.date,sum, data = data)
+with(L1.by.day, plot(julian.date,cumsum(nL1), type = "l", ylim = c(0,75)))
+
+L2.by.day <- aggregate(nL2 ~ julian.date,sum, data = data)
+
+lines(L1.by.day[,1], cumsum(L1.by.day[,2] + L2.by.day[,2]))
+
 
 #cumulative egg by day
 eggs.by.day <- aggregate(nEggs ~ julian.date,sum, data = data)
 cum.eggs.by.day <- eggs.by.day
-cum.eggs.by.day[,2] <- cumsum(cum.eggs.by.day$nEggs) / sum(cum.eggs.by.day$nEggs) 
+cum.eggs.by.day[,2] <- cumsum(cum.eggs.by.day$nEggs) 
 with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
 
 
@@ -220,6 +235,10 @@ phen.ont.landscape <- function(interval.as.char){
         
 }
 
+
+with(data,   aggregate(cbind(nL1, nL2, nL3, nL4, nL5), list(cut(date, "month")) , sum))
+
+
 phen.ont.landscape("1 weeks")
 phen.ont.landscape("2 weeks")
 phen.ont.landscape("3 weeks")
@@ -227,7 +246,7 @@ phen.ont.landscape("4 weeks")
 phen.ont.landscape("6 weeks")
 
 unique(data$catLengths)
-rapply(data$catLengths, function(x) x[x<5])
+rapply(data$L1lengths, function(x) x[x<5])
 
 #update trip.csv
 
