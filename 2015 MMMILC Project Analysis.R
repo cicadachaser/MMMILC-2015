@@ -5,9 +5,8 @@ rm(list=ls())
 graphics.off()
 pardefault <- par(no.readonly = T)
 
-#load packages, se function
+#load packages, se function that removes NA's
 library(ggplot2)
-library(plyr)
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
@@ -29,6 +28,9 @@ data<-data[order(data$date, data$milkweed.ID),]
 data<-data[data$date>"2015-04-26",]
 trip<-trip[trip$date>"2015-04-26",]
 
+#exclude blank plant ID
+data[ - which(is.na(data$milkweed.ID)) , ]
+
 #calculate the project.day and week
 data$julian.date<-as.integer(julian(data$date, origin=as.Date("2015-01-01")))
 data$project.day<-data$julian.date-min(data$julian.date, na.rm=TRUE)+1
@@ -40,11 +42,18 @@ trip$week<-(trip$project.day-1) %/% 7+1
 
 #data cleaning
 #any observations 0 percent.green, but ALIVE status. replace with DEAD
-data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , ]
-"DEAD" <- data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"]
-data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") ,] 
+data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"] <- "DEAD"
+
+#any observations NA percent.green, but ALIVE status. action TBD
+data[ which(is.na(data$percent.green) & data$milkweed.status=="ALIVE") , ]
+
+#any observation with a non-zero percent green and NA for status, replace with ALIVE
+data[ which(data$percent.green > 0 & is.na(data$milkweed.status)) , "milkweed.status"] <- "ALIVE"
+
+#remove all rows where milkweed status is NA
+data <- data[ - which(is.na(data$milkweed.status)) , ]
+
 #observations with 0 or only numeric in stage.length field. set to none.
-data[grep("^[0-9]*$", data$stage.length), ]
 data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 
 #make any version of NONE, None, etc -> "none"
@@ -101,7 +110,7 @@ data$catLengths <- lapply(Llist, unlist)
 
 
 sort(unique(data$name))
-
+sort(unique(c(as.character(trip$name.1), as.character(trip$name.2))))
 
 ###########
 ##plots
