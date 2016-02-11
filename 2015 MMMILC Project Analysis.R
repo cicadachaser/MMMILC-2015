@@ -109,8 +109,45 @@ Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengt
 data$catLengths <- lapply(Llist, unlist)
 
 
-sort(unique(data$name))
-sort(unique(c(as.character(trip$name.1), as.character(trip$name.2))))
+#function to call all observations from a student and summarize or plot data
+student.summary <- function(student.name){
+  #list trips student.name was on
+  trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
+                 trip[student.name == trip$name.2, "trip.ID"] )
+  #drop NA's
+  trips <- sort(trips[!is.na(trips)])
+  
+  #get observations student.name was a part of
+  observations <- which(!is.na(match(data$trip.ID, trips)))
+  dStudent <- data[observations,]
+  
+  #trips
+    tripsTaken <- length(trips)
+  #monarchs found
+    monarchsFound <- sum(dStudent$nLTotal)
+    monarchsFound
+  #live plants surveyed
+    livePlants <- nrow(dStudent[dStudent$milkweed.status== "ALIVE" , ])
+    livePlants
+  #total plants surveyed
+    totalPlants <- nrow(dStudent)
+    totalPlants
+  #productivity per week
+   plot(table(dStudent$julian.date), type = "l", 
+        xlab = "monarchs per day", ylab = "julian date", main = student.name)
+    list(tripsTaken = tripsTaken, monarchsFound = monarchsFound, livePlants = livePlants, 
+         totalPlants = totalPlants)
+}
+
+student.summary("Louie Yang")
+
+sum(trip$name.1=="Louie Yang")
+sum(trip$name.2=="Louie Yang", na.rm=TRUE)
+sum(trip$name.3=="Louie Yang", na.rm=TRUE)
+
+#apply student.summary to all students
+sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
+       function(x) student.summary(x))
 
 ###########
 ##plots
