@@ -7,6 +7,9 @@ pardefault <- par(no.readonly = T)
 
 #load packages, se function that removes NA's
 library(ggplot2)
+library(knitr)
+library(xtable)
+
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
@@ -108,6 +111,13 @@ data$L5lengths <- impute.for.instar(5)
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
 data$catLengths <- lapply(Llist, unlist)
 
+#check if all trips in trop log in data, and vis versa
+#list trips that have a trip log, but no data
+unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID))))]
+
+#list trips that have data, but no trip log
+unique(data$trip.ID)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
+
 
 #function to call all observations from a student and summarize or plot data
 student.summary <- function(student.name){
@@ -133,21 +143,40 @@ student.summary <- function(student.name){
     totalPlants <- nrow(dStudent)
     totalPlants
   #productivity per week
-   plot(table(dStudent$julian.date), type = "l", 
-        xlab = "monarchs per day", ylab = "julian date", main = student.name)
+   plot(table(dStudent$week), type = "b", 
+        ylab = "observations per week", xlab = "week number", main = student.name, 
+        ylim=c(0,150),xlim = c(0, 52))
+   
     list(tripsTaken = tripsTaken, monarchsFound = monarchsFound, livePlants = livePlants, 
          totalPlants = totalPlants)
 }
 
 student.summary("Louie Yang")
 
-sum(trip$name.1=="Louie Yang")
-sum(trip$name.2=="Louie Yang", na.rm=TRUE)
-sum(trip$name.3=="Louie Yang", na.rm=TRUE)
+#apply student.summary to all students, create a data frame form the result
+student.df <- data.frame(sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
+       function(x) student.summary(x)))
 
-#apply student.summary to all students
-sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
-       function(x) student.summary(x))
+avg.values <- data.frame(rownames = rownames(student.df))
+avg.values$tripsTaken = mean(as.numeric(student.df["tripsTaken",]), na.rm = TRUE)
+
+#make a list of names, remove NA value
+name.list <- unique(c(as.character(trip$name.1), as.character(trip$name.2)))
+name.list <- name.list[!is.na(name.list)]
+
+#remove spaces for pdf file names (crashes if file names contain spaces )
+file.names.list <- gsub(" ", "_", name.list)
+
+#this is the loop to run the report generating script with each students subsetted data
+setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
+for(i in 1:length(name.list)){
+  file.name <- file.names.list[i]
+  knit2pdf("testingStudentLoops.Rnw", output = paste0('report_',file.name, '.tex'))
+}
+#this cleans up some of the temporary log files and .tex that were generated as intermediates to .pdfs
+system("latexmk -c")
+file.remove(list.files()[grep(".tex", list.files())])
+setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 
 ###########
 ##plots
