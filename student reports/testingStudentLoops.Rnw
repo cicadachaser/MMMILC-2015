@@ -2,14 +2,16 @@
 <<loaddata, echo=FALSE, message=FALSE>>=
   #list trips student.name was on
   student.name <- name.list[i]
-  trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
+  student.trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
                  trip[student.name == trip$name.2, "trip.ID"] )
   #drop NA's
-  trips <- sort(trips[!is.na(trips)])
+  student.trips <- sort(student.trips[!is.na(student.trips)])
   
   #get observations student.name was a part of
-  observations <- which(!is.na(match(data$trip.ID, trips)))
+  observations <- which(!is.na(match(data$trip.ID, student.trips)))
   dStudent <- data[observations,]
+  dStudentTrips <- trip[match(student.trips, trip$trip.ID) , ]
+  
 @
 \documentclass[10pt]{article}
 \title{student.name}
@@ -22,8 +24,11 @@
 <<summary statistics, echo = FALSE>>=
 
   #trips
-    tripsTaken <- length(trips)
+    tripsTaken <- length(student.trips)
   
+  #time in field
+  timeInField <- sum(dStudentTrips$duration.min, na.rm=TRUE)
+    
   #monarchs found
     monarchsFound <- sum(dStudent$nLTotal)
     
@@ -33,7 +38,8 @@
   #total plants surveyed
     totalPlants <- nrow(dStudent)
     indiv.df <- data.frame("Trips taken" = tripsTaken, "Monarchs found" = monarchsFound, 
-               "Plants characterized" = livePlants, row.names = student.name)
+               "Plants characterized" = livePlants, "Total time in field" = timeInField, 
+               row.names = student.name)
   
 @
 

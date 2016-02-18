@@ -117,22 +117,21 @@ unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID
 
 #list trips that have data, but no trip log
 unique(data$trip.ID)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
-
-
+trip
 #function to call all observations from a student and summarize or plot data
 student.summary <- function(student.name){
   #list trips student.name was on
-  trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
-                 trip[student.name == trip$name.2, "trip.ID"] )
+  student.trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
+                       trip[student.name == trip$name.2, "trip.ID"] )
   #drop NA's
-  trips <- sort(trips[!is.na(trips)])
+  student.trips <- sort(student.trips[!is.na(student.trips)])
   
   #get observations student.name was a part of
-  observations <- which(!is.na(match(data$trip.ID, trips)))
+  observations <- which(!is.na(match(data$trip.ID, student.trips)))
   dStudent <- data[observations,]
   
   #trips
-    tripsTaken <- length(trips)
+    tripsTaken <- length(student.trips)
   #monarchs found
     monarchsFound <- sum(dStudent$nLTotal)
     monarchsFound
