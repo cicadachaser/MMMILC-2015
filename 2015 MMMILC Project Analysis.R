@@ -5,11 +5,11 @@ rm(list=ls())
 graphics.off()
 pardefault <- par(no.readonly = T)
 
-#load packages, se function that removes NA's
+#load packages, 
 library(ggplot2)
 library(knitr)
-library(xtable)
 
+#se function that removes NA's
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
@@ -56,6 +56,13 @@ data[ which(data$percent.green > 0 & is.na(data$milkweed.status)) , "milkweed.st
 #remove all rows where milkweed status is NA
 data <- data[ - which(is.na(data$milkweed.status)) , ]
 
+#check if all trips in trop log in data, and vis versa
+#list trips that have a trip log, but no data
+unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID))))]
+
+#list trips that have data, but no trip log
+unique(data$trip.ID)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
+
 #observations with 0 or only numeric in stage.length field. set to none.
 data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 
@@ -76,6 +83,10 @@ data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 #add monarch load column
 data$monarchLoad <- data$nLTotal + data$nEggs
 
+head(data)
+temp <- merge(data, trip, by.x = "trip.ID", by.y = "trip.ID")
+head(trip)
+head(temp)
 #add L class specific counts
 data$nL1 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][1]", x) ) ) ) ) )
 data$nL2 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][2]", x) ) ) ) ) )
@@ -111,13 +122,7 @@ data$L5lengths <- impute.for.instar(5)
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
 data$catLengths <- lapply(Llist, unlist)
 
-#check if all trips in trop log in data, and vis versa
-#list trips that have a trip log, but no data
-unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID))))]
 
-#list trips that have data, but no trip log
-unique(data$trip.ID)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
-trip
 #function to call all observations from a student and summarize or plot data
 student.summary <- function(student.name){
   #list trips student.name was on
@@ -156,6 +161,8 @@ student.summary("Louie Yang")
 student.df <- data.frame(sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
        function(x) student.summary(x)))
 
+#student.name <- "Louie Yang"
+print(student.name)
 avg.values <- data.frame(rownames = rownames(student.df))
 avg.values$tripsTaken = mean(as.numeric(student.df["tripsTaken",]), na.rm = TRUE)
 
@@ -167,6 +174,7 @@ name.list <- name.list[!is.na(name.list)]
 file.names.list <- gsub(" ", "_", name.list)
 
 #this is the loop to run the report generating script with each students subsetted data
+plot(density(data[(data$nLTotal!=0),"nLTotal"]))
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
 for(i in 1:length(name.list)){
   file.name <- file.names.list[i]
