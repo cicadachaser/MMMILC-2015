@@ -7,6 +7,7 @@ pardefault <- par(no.readonly = T)
 
 #load packages, 
 library(ggplot2)
+
 library(knitr)
 
 #se function that removes NA's
@@ -267,6 +268,7 @@ monarch.by.week<-aggregate(monarchLoad~week,sum,data=data)
 p6.1 <- ggplot(monarch.by.week, aes(x=week, y=monarchLoad))
 p6.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
   scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("Monarch per week")
+
 
 #cumulative larvae by day
 larvae.by.day <- aggregate(nLTotal ~ julian.date,sum, data = data)
