@@ -7,9 +7,9 @@ pardefault <- par(no.readonly = T)
 
 #load packages, 
 library(ggplot2)
-
+library(rmarkdown)
 library(knitr)
-
+library(plyr)
 #se function that removes NA's
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
@@ -19,7 +19,7 @@ setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 
 trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
 data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
-
+trip
 data$milkweed.status<-as.character(data$milkweed.status)
 
 data$date<-as.Date(data$date, "%m/%d/%Y") 
@@ -36,10 +36,6 @@ trip<-trip[trip$date>"2015-04-26",]
 data[ - which(is.na(data$milkweed.ID)) , ]
 
 #calculate the project.day and week
-data$julian.date<-as.integer(julian(data$date, origin=as.Date("2015-01-01")))
-data$project.day<-data$julian.date-min(data$julian.date, na.rm=TRUE)+1
-data$week<-(data$project.day-1) %/% 7+1
-
 trip$julian.date<-as.integer(julian(trip$date, origin=as.Date("2015-01-01")))
 trip$project.day<-trip$julian.date-min(trip$julian.date)+1
 trip$week<-(trip$project.day-1) %/% 7+1
@@ -48,7 +44,7 @@ trip$week<-(trip$project.day-1) %/% 7+1
 #any observations 0 percent.green, but ALIVE status. replace with DEAD
 data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"] <- "DEAD"
 
-#any observations NA percent.green, but ALIVE status. action TBD
+#any observations NA percent.green, but ALIVE status. action TBD, but real data here, so leaving intact.
 data[ which(is.na(data$percent.green) & data$milkweed.status=="ALIVE") , ]
 
 #any observation with a non-zero percent green and NA for status, replace with ALIVE
@@ -62,7 +58,19 @@ data <- data[ - which(is.na(data$milkweed.status)) , ]
 unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID))))]
 
 #list trips that have data, but no trip log
-unique(data$trip.ID)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
+trips.to.add <- unique(data$trip)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
+#add trip data for these observations, list NA's and deal with any if present
+data[which(is.na(data$trip.ID)),]
+#a loop to get data for each trip that occurs in data,and paste that trips basic information into trip log for matching
+for (i in 1:length(trips.to.add)){
+    #the first row that does not have a trip log entry 
+      pull.row  <- data[which(data$trip.ID==trips.to.add[i])[1],]
+    #rename the name column to name.1
+      colnames(pull.row)[which(colnames(pull.row)=="name")] <- "name.1"
+    #add this data at the end of trip log
+      trip <- rbind.fill(trip, pull.row[,c("trip.ID", "date", "name.1") ] )
+}
+
 
 #observations with 0 or only numeric in stage.length field. set to none.
 data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
@@ -84,10 +92,6 @@ data$nEggs <- unlist(lapply(split,  function(x) sum((grepl("[E]", x) ) ) ) )
 #add monarch load column
 data$monarchLoad <- data$nLTotal + data$nEggs
 
-head(data)
-temp <- merge(data, trip, by.x = "trip.ID", by.y = "trip.ID")
-head(trip)
-head(temp)
 #add L class specific counts
 data$nL1 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][1]", x) ) ) ) ) )
 data$nL2 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][2]", x) ) ) ) ) )
@@ -97,6 +101,19 @@ data$nL5 <- as.numeric(unlist(lapply(split,  function(x) sum((grepl("[L][5]", x)
 
 #check if sum of larval class counts is equal to total larvae.
 which(data$nLTotal!=rowSums(cbind(data$nL1, data$nL2, data$nL3, data$nL4, data$nL5)))
+
+#which trip.ID's contain multiple dates?
+trip.counts <- data.frame("number.dates"=rep(NA, length(unique(data$trip.ID))), "trip.ID"=rep(NA, length(unique(data$trip.ID))))
+for (i in 1:length(unique(data$trip.ID))){
+  allTrips <- unique(data$trip.ID)
+   trip.counts$number.dates[i] <- length(unique(data[data$trip.ID==allTrips[i],"date"]))
+   trip.counts$trip.ID[i] <- allTrips[i]
+}
+trip.counts[trip.counts$number.dates>1,]
+
+#merge trip and main data frames
+data <- merge(trip, data, by.x = "trip.ID", by.y = "trip.ID")
+
 
 #a function to collect all measurements by instar, impute all missing L measurements according to instar, convert all to numeric
 impute.for.instar <- function(instar.number, split.list = split){
@@ -127,17 +144,16 @@ data$catLengths <- lapply(Llist, unlist)
 #function to call all observations from a student and summarize or plot data
 student.summary <- function(student.name){
   #list trips student.name was on
-  student.trips  <- c  ( trip[student.name == trip$name.1, "trip.ID"] , 
-                       trip[student.name == trip$name.2, "trip.ID"] )
+  student.obs <- which(student.name==data$name.1 | student.name==data$name.2)
+  
   #drop NA's
-  student.trips <- sort(student.trips[!is.na(student.trips)])
+  student.obs <- sort(student.obs[!is.na(student.obs)])
   
   #get observations student.name was a part of
-  observations <- which(!is.na(match(data$trip.ID, student.trips)))
-  dStudent <- data[observations,]
+  dStudent <- data[student.obs,]
   
   #trips
-    tripsTaken <- length(student.trips)
+    tripsTaken <- length(unique(dStudent$trip.ID))
   #monarchs found
     monarchsFound <- sum(dStudent$nLTotal)
     monarchsFound
@@ -147,6 +163,9 @@ student.summary <- function(student.name){
   #total plants surveyed
     totalPlants <- nrow(dStudent)
     totalPlants
+  
+  #time per milkweed
+    
   #productivity per week
    plot(table(dStudent$week), type = "b", 
         ylab = "observations per week", xlab = "week number", main = student.name, 
@@ -161,29 +180,29 @@ student.summary("Louie Yang")
 #apply student.summary to all students, create a data frame form the result
 student.df <- data.frame(sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
        function(x) student.summary(x)))
-
-#student.name <- "Louie Yang"
-print(student.name)
-avg.values <- data.frame(rownames = rownames(student.df))
-avg.values$tripsTaken = mean(as.numeric(student.df["tripsTaken",]), na.rm = TRUE)
+#add a column of averages
+student.df$average <- sapply(1:nrow(student.df), function(x) mean(unlist( student.df[x,])))
 
 #make a list of names, remove NA value
 name.list <- unique(c(as.character(trip$name.1), as.character(trip$name.2)))
 name.list <- name.list[!is.na(name.list)]
 
-#remove spaces for pdf file names (crashes if file names contain spaces )
-file.names.list <- gsub(" ", "_", name.list)
+#remove spaces for pdf file names, add current date for report and pdf extension
+file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
+                         gsub(" ", "_", name.list), 
+                         ".pdf", sep = "")
 
-#this is the loop to run the report generating script with each students subsetted data
-plot(density(data[(data$nLTotal!=0),"nLTotal"]))
+#this is the loop to run the report generating script
+
+#for each student name in name.list, it generates a report including summary statistics from
+#student.df and plots several things
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
 for(i in 1:length(name.list)){
-  file.name <- file.names.list[i]
-  knit2pdf("testingStudentLoops.Rnw", output = paste0('report_',file.name, '.tex'))
+  student.name <- name.list[i]
+  render(input = "student report.Rmd", output_format = "pdf_document", 
+         output_file = file.names.list[i] )
 }
-#this cleans up some of the temporary log files and .tex that were generated as intermediates to .pdfs
-system("latexmk -c")
-file.remove(list.files()[grep(".tex", list.files())])
+#switch back to main working dir
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 
 ###########
