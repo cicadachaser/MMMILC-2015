@@ -11,6 +11,7 @@ format(student.df[ , c(i , ncol(student.df))] , digits = 2)
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
+#print all the plots that were made in student summary, and compile into a single grid of plots
 do.call(grid.arrange, student.plots[[student.name]])
 ```
 
