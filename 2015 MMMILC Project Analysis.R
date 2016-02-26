@@ -15,9 +15,10 @@ library(gridExtra)
 #se function that removes NA's
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
-setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
+#setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
+setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
 
 trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
 data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
@@ -233,14 +234,14 @@ file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
 #this is the loop to run the report generating script
 #for each student name in name.list, it generates a report including summary statistics from
 #student.df and plots several things
-setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
+setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
     for(i in 1:length(name.list)){
             student.name <- name.list[i]
             render(input = "student report.Rmd", output_format = "pdf_document", 
                   output_file = file.names.list[i] )
             }
 #switch back to main working dir
-setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
+setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")
 
 ###########
 ##plots
