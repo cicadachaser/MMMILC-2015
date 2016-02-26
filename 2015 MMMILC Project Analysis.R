@@ -10,6 +10,8 @@ library(ggplot2)
 library(rmarkdown)
 library(knitr)
 library(plyr)
+library(gridExtra)
+
 #se function that removes NA's
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
@@ -19,28 +21,14 @@ setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 
 trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
 data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
-trip
-data$milkweed.status<-as.character(data$milkweed.status)
 
-data$date<-as.Date(data$date, "%m/%d/%Y") 
-trip$date<-as.Date(trip$date, "%m/%d/%Y")
 
 #order by date, then by milkweed.ID
 data<-data[order(data$date, data$milkweed.ID),]
 
-#exclude training data
-data<-data[data$date>"2015-04-26",]
-trip<-trip[trip$date>"2015-04-26",]
+data$milkweed.status<-as.character(data$milkweed.status)
 
-#exclude blank plant ID
-data[ - which(is.na(data$milkweed.ID)) , ]
-
-#calculate the project.day and week
-trip$julian.date<-as.integer(julian(trip$date, origin=as.Date("2015-01-01")))
-trip$project.day<-trip$julian.date-min(trip$julian.date)+1
-trip$week<-(trip$project.day-1) %/% 7+1
-
-#data cleaning
+#cleaning object data
 #any observations 0 percent.green, but ALIVE status. replace with DEAD
 data[ which(data$percent.green==0 & data$milkweed.status=="ALIVE") , "milkweed.status"] <- "DEAD"
 
@@ -49,6 +37,22 @@ data[ which(is.na(data$percent.green) & data$milkweed.status=="ALIVE") , ]
 
 #any observation with a non-zero percent green and NA for status, replace with ALIVE
 data[ which(data$percent.green > 0 & is.na(data$milkweed.status)) , "milkweed.status"] <- "ALIVE"
+
+#observations with 0 or only numeric in stage.length field. set to none.
+data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
+
+#make any version of NONE, None, etc -> "none"
+data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
+
+data$date<-as.Date(data$date, "%m/%d/%Y") 
+trip$date<-as.Date(trip$date, "%m/%d/%Y")
+
+#exclude training data
+data<-data[data$date>"2015-04-26",]
+trip<-trip[trip$date>"2015-04-26",]
+
+#exclude blank plant ID
+data <- data[ - which(is.na(data$milkweed.ID)) , ]
 
 #remove all rows where milkweed status is NA
 data <- data[ - which(is.na(data$milkweed.status)) , ]
@@ -59,24 +63,26 @@ unique(trip$trip.ID)[which(is.na(match(unique(trip$trip.ID), unique(data$trip.ID
 
 #list trips that have data, but no trip log
 trips.to.add <- unique(data$trip)[which(is.na(match(unique(data$trip), unique(trip$trip.ID))))]
-#add trip data for these observations, list NA's and deal with any if present
-data[which(is.na(data$trip.ID)),]
+
 #a loop to get data for each trip that occurs in data,and paste that trips basic information into trip log for matching
 for (i in 1:length(trips.to.add)){
-    #the first row that does not have a trip log entry 
-      pull.row  <- data[which(data$trip.ID==trips.to.add[i])[1],]
-    #rename the name column to name.1
-      colnames(pull.row)[which(colnames(pull.row)=="name")] <- "name.1"
-    #add this data at the end of trip log
-      trip <- rbind.fill(trip, pull.row[,c("trip.ID", "date", "name.1") ] )
+  #the first row that does not have a trip log entry 
+  pull.row  <- data[which(data$trip.ID==trips.to.add[i])[1],]
+  #rename the name column to name.1
+  colnames(pull.row)[which(colnames(pull.row)=="name")] <- "name.1"
+  #add this data at the end of trip log
+  trip <- rbind.fill(trip, pull.row[,c("trip.ID", "date", "name.1") ] )
 }
 
+#list NA's and deal with any if present
+data[which(is.na(data$trip.ID)),]
 
-#observations with 0 or only numeric in stage.length field. set to none.
-data[grep("^[0-9]*$", data$stage.length) , "stage.length"] <- "none"
 
-#make any version of NONE, None, etc -> "none"
-data[grep("[Nn][Oo][Nn][Ee]", data$stage.length), "stage.length"] <- "none"
+#calculate the project.day and week
+trip$julian.date<-as.integer(julian(trip$date, origin=as.Date("2015-01-01")))
+trip$project.day<-trip$julian.date-min(trip$julian.date)+1
+trip$week<-(trip$project.day-1) %/% 7+1
+
 
 
 ##dealing with the stage.length field
@@ -140,9 +146,12 @@ data$L5lengths <- impute.for.instar(5)
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
 data$catLengths <- lapply(Llist, unlist)
 
+#function to call all observations from a student and summarize
+#add elements within this function to add rows to student summary table
 
-#function to call all observations from a student and summarize or plot data
+student.plots <- list()
 student.summary <- function(student.name){
+  student <- list()
   #list trips student.name was on
   student.obs <- which(student.name==data$name.1 | student.name==data$name.2)
   
@@ -152,40 +161,69 @@ student.summary <- function(student.name){
   #get observations student.name was a part of
   dStudent <- data[student.obs,]
   
-  #trips
-    tripsTaken <- length(unique(dStudent$trip.ID))
-  #monarchs found
-    monarchsFound <- sum(dStudent$nLTotal)
-    monarchsFound
-  #live plants surveyed
-    livePlants <- nrow(dStudent[dStudent$milkweed.status== "ALIVE" , ])
-    livePlants
-  #total plants surveyed
-    totalPlants <- nrow(dStudent)
-    totalPlants
-  
-  #time per milkweed
+      #trips
+      student$tripsTaken <- length(unique(dStudent$trip.ID))
     
-  #productivity per week
-   plot(table(dStudent$week), type = "b", 
-        ylab = "observations per week", xlab = "week number", main = student.name, 
-        ylim=c(0,150),xlim = c(0, 52))
-   
-    list(tripsTaken = tripsTaken, monarchsFound = monarchsFound, livePlants = livePlants, 
-         totalPlants = totalPlants)
+      #monarchs found
+      student$monarchsFound <- sum(dStudent$nLTotal)
+    
+      #live plants surveyed
+      student$livePlants <- nrow(dStudent[dStudent$milkweed.status== "ALIVE" , ])
+    
+      #total plants surveyed
+      student$totalPlants <- nrow(dStudent)
+    
+      #total time in field
+      tripStudent <- unique(dStudent$trip.ID)
+      tripStudent <- dStudent[match(tripStudent, dStudent$trip.ID),]
+      student$timeInField <- sum(tripStudent$duration.min, na.rm = TRUE)
+    
+      #mean milkweed observation time
+      student$timePerMilkweed <- weighted.mean( x = tripStudent$duration.min / tripStudent$milkweed.count , 
+                                              w = tripStudent$milkweed.count, na.rm = TRUE)
+  
+      
+  #make some plots, put them into a list to save for student reports
+      #per plant monarch discovery rate compared to average
+        monarchProb <- sapply(unique(data$week), 
+                              function(x) sum (data[data$week == x , "nLTotal"]) / nrow(data[data$week == x ,]))
+        
+        studentMonarchProb <- sapply(unique(data$week), 
+                                   function(x) sum (dStudent[dStudent$week == x , "nLTotal"]) / nrow(dStudent[dStudent$week == x ,]))
+        monarchDetection <- data.frame(monarchProb = monarchProb, studentMonarchProb = studentMonarchProb)
+        
+        p1 <- qplot(data = monarchDetection, y = monarchProb) + geom_line() + ylab("monarch detection proabability") + xlab("week")
+        p1 <- p1 + geom_point(size = 5,data = monarchDetection, aes(y = studentMonarchProb), colour = "red" )
+        
+        #per plant egg discovery rate compared to average
+        eggProb <- sapply(unique(data$week), 
+                              function(x) sum (data[data$week == x , "nEggs"]) / nrow(data[data$week == x ,]))
+        
+        studentEggProb <- sapply(unique(data$week), 
+                                     function(x) sum (dStudent[dStudent$week == x , "nEggs"]) / nrow(dStudent[dStudent$week == x ,]))
+        eggDetection <- data.frame(eggProb = eggProb, studentEggProb = studentEggProb)
+        
+        p2 <- qplot(data = eggDetection, y = eggProb) + geom_line() + ylab("egg detection proabability") + xlab("week")
+        p2 <- p2 + geom_point(size = 5,data = eggDetection, aes(y = studentEggProb), colour = "red" )
+        
+        
+        #create a list of all plots for this student, append that list of plots for later plotting
+        student.plots[[student.name]] <<- list(p1,p2)
+
+  #convert summary list to data.frame and print
+  data.frame(student)
+  
 }
-
-student.summary("Louie Yang")
-
-#apply student.summary to all students, create a data frame form the result
-student.df <- data.frame(sapply(sort(unique(c(as.character(trip$name.1), as.character(trip$name.2)))), 
-       function(x) student.summary(x)))
-#add a column of averages
-student.df$average <- sapply(1:nrow(student.df), function(x) mean(unlist( student.df[x,])))
 
 #make a list of names, remove NA value
 name.list <- unique(c(as.character(trip$name.1), as.character(trip$name.2)))
-name.list <- name.list[!is.na(name.list)]
+name.list <- sort(name.list[!is.na(name.list)])
+
+#apply student.summary function to all students, create a data frame form the result
+student.df <- data.frame(sapply( name.list, function(x) student.summary(x)))
+
+#add a column of averages using a mean function that can deal with NaN's and NA's
+student.df$average <- sapply(1:nrow(student.df), function(x) mean(unlist( student.df[x,]), na.rm = TRUE))
 
 #remove spaces for pdf file names, add current date for report and pdf extension
 file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
@@ -193,15 +231,14 @@ file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
                          ".pdf", sep = "")
 
 #this is the loop to run the report generating script
-
 #for each student name in name.list, it generates a report including summary statistics from
 #student.df and plots several things
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
-for(i in 1:length(name.list)){
-  student.name <- name.list[i]
-  render(input = "student report.Rmd", output_format = "pdf_document", 
-         output_file = file.names.list[i] )
-}
+    for(i in 1:length(name.list)){
+            student.name <- name.list[i]
+            render(input = "student report.Rmd", output_format = "pdf_document", 
+                  output_file = file.names.list[i] )
+            }
 #switch back to main working dir
 setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 

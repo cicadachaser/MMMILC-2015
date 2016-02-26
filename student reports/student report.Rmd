@@ -6,6 +6,12 @@ output: pdf_document
 
 
 ```{r, echo = FALSE}
-student.df[ , c(i , ncol(student.df))]
+#print the students column along with the last column in student.df (average)
+format(student.df[ , c(i , ncol(student.df))] , digits = 2)
 ```
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+do.call(grid.arrange, student.plots[[student.name]])
+```
+
 
