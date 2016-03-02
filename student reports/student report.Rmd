@@ -1,13 +1,13 @@
 ---
 title: "`r format(student.name)`"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+date: "`r format(last.week)`"
 output: pdf_document
 ---
 
 
 ```{r, echo = FALSE}
 #print the students column along with the last column in student.df (average)
-format(student.df[ , c(i , ncol(student.df))] , digits = 2)
+kable(student.df[ , c(i , ncol(student.df))])
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
