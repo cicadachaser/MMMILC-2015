@@ -15,10 +15,10 @@ library(gridExtra)
 #se function that removes NA's
 std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
-#setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
+setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
 #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
 #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
-setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
+#setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
 
 trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
 data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
@@ -147,157 +147,199 @@ data$L5lengths <- impute.for.instar(5)
 Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengths, data$L5lengths)
 data$catLengths <- lapply(Llist, unlist)
 
+
+
+
+
+
 #function to call all observations from a student and summarize
 #add elements within this function to add rows to student summary table
 ###################################################
 student.plots <- list()
+compare.plots <- list()
+missedPlants <- list()
+
 student.summary <- function(student.name){
-  student <- list()
-  #list trips student.name was on
-  student.obs <- which(student.name==data$name.1 | student.name==data$name.2 | student.name==data$name.3)
+    student <- list()
+    #list trips student.name was on
+      student.obs <- which(student.name==data$name.1 | student.name==data$name.2 | student.name==data$name.3)
   
-  #drop NA's
-  student.obs <- sort(student.obs[!is.na(student.obs)])
+    #drop NA's
+      student.obs <- sort(student.obs[!is.na(student.obs)])
   
-  #get observations student.name was a part of
-  dStudent <- data[student.obs,]
+    #get observations student.name was a part of
+      dStudent <- data[student.obs,]
   
-      #trips
+    #trips
       student$tripsTaken <- length(unique(dStudent$trip.ID))
     
-      #monarchs found
-      student$monarchsFound <- sum(dStudent$nLTotal)
+    #monarchs found
+      student$larvaeFound <- sum(dStudent$nLTotal)
     
-      #live plants surveyed
+    #live plants surveyed
       student$livePlants <- nrow(dStudent[dStudent$milkweed.status== "ALIVE" , ])
     
-      #total plants surveyed
+    #total plants surveyed
       student$totalPlants <- nrow(dStudent)
     
-      #total time in field
+    #total time in field
       tripStudent <- unique(dStudent$trip.ID)
       tripStudent <- dStudent[match(tripStudent, dStudent$trip.ID),]
       student$timeInField <- sum(tripStudent$duration.min, na.rm = TRUE)
     
-      #mean milkweed observation time
+    #mean milkweed observation time
       student$timePerMilkweed <- weighted.mean( x = tripStudent$duration.min / tripStudent$milkweed.count , 
                                               w = tripStudent$milkweed.count, na.rm = TRUE)
-  
-      
-  #make some plots, put them into a list to save for student reports
-      #student monarch discovery rate compared to average
-        monarchProb <- sapply(unique(data$week), 
-                              function(x) sum (data[data$week == x , "nLTotal"]) / nrow(data[data$week == x ,]))
-        
-        studentMonarchProb <- sapply(unique(data$week), 
-                                   function(x) sum (dStudent[dStudent$week == x , "nLTotal"]) / nrow(dStudent[dStudent$week == x ,]))
-        monarchDetection <- data.frame(monarchProb = monarchProb, studentMonarchProb = studentMonarchProb)
-        
-        p1 <- qplot(data = monarchDetection, y = monarchProb) + geom_line() + ylab("p(monarch larva)") + xlab("week")
-        p1 <- p1 + geom_point(size = 3,data = monarchDetection, aes(y = studentMonarchProb), colour = "red" )
-        
-        #student egg discovery rate compared to average
-        eggProb <- sapply(unique(data$week), 
-                              function(x) sum (data[data$week == x , "nEggs"]) / nrow(data[data$week == x ,]))
-        
-        studentEggProb <- sapply(unique(data$week), 
-                                     function(x) sum (dStudent[dStudent$week == x , "nEggs"]) / nrow(dStudent[dStudent$week == x ,]))
-        eggDetection <- data.frame(eggProb = eggProb, studentEggProb = studentEggProb)
-        
-        p2 <- qplot(data = eggDetection, y = eggProb) + geom_line() + ylab("p(egg)") + xlab("week")
-        p2 <- p2 + geom_point(size = 3,data = eggDetection, aes(y = studentEggProb), colour = "red" )
-        
-        #time per plant by week, average vs student
-        tripLevel <- data[match(sort(unique(data$trip.ID)), data$trip.ID) , ]
-        weeklyTimeAvg <- sapply(unique(data$week), function(z) 
-          weighted.mean( x = tripLevel[tripLevel$week == z ,"duration.min" ] /  tripLevel[tripLevel$week == z ,"milkweed.count" ] , 
-                       w = tripLevel[tripLevel$week == z ,"milkweed.count"], na.rm = TRUE))
-        
-        weeklyStudentAvg <-         sapply(unique(data$week), function(z) 
-          weighted.mean( x = tripStudent[tripStudent$week == z ,"duration.min" ] /  tripStudent[tripStudent$week == z ,"milkweed.count" ] , 
-                         w = tripStudent[tripStudent$week == z ,"milkweed.count"], na.rm = TRUE))
-        timeDevotion <- data.frame(weeklyTimeAvg, weeklyStudentAvg)
-        
-        p3 <- qplot(data = timeDevotion, y = weeklyTimeAvg) + geom_line() + ylab("minutes / plant") + xlab("week")
-        p3 <- p3 + geom_point(size = 3,data = timeDevotion, aes(y = weeklyStudentAvg), colour = "red" )
-        
-        #student number of plants censused per week
-        weekCount <- data.frame(week = 1:max(data$week), count = NA, cumMonarch = 0)
-        weekCount[match(names(table(dStudent$week)) , weekCount$week) , "count"] <- table(dStudent$week)
-        
-        p4 <- qplot(data = weekCount, x = weekCount$week , y = as.numeric(weekCount$count)) 
-             p4  <- p4 + geom_line() + xlab("week") + ylab("plants per week") 
-             p4 <- p4 + coord_cartesian(xlim = c(0, max(data$week))) + coord_cartesian(ylim = c(0, 1.2*max(weekCount$count, na.rm = TRUE))) 
-        
-        
-        #cumulative monarch eggs and larvae found on plants
-        monarchs <- with(dStudent, tapply(dStudent$monarchLoad, dStudent$week, sum))
-        weekCount[match(names(monarchs), weekCount$week) , "cumMonarch"] <- monarchs
-        weekCount$cumMonarch <- cumsum(weekCount$cumMonarch)
-        
-        p5 <- qplot(data = weekCount, x = weekCount$week , y = as.numeric(weekCount$cumMonarch)) 
-            p5  <- p5 + geom_line() + xlab("week") + ylab("cumulat. monarchs") 
-            p5 <- p5 + coord_cartesian(xlim = c(0, max(data$week))) + coord_cartesian(ylim = c(0, 1.2*max(weekCount$cumMonarch, na.rm = TRUE))) 
+    
+    #list plants censused in the most recent trip, determine if that sequence is a complete one
+    #print any plants missing from the sequence
+      plantsRecentWeek <- sort(dStudent[dStudent$week==max(dStudent$week),"milkweed.ID"])
+      completeSeries <- min(plantsRecentWeek):max(plantsRecentWeek)
+      missedPlants[[student.name]] <- c(completeSeries[which(is.na(match(completeSeries , plantsRecentWeek)))])
 
-            head(data)
-            
-        #average percent green in each week compared to average
-        weekGreen <- with(data, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
-        studentGreen <- with(dStudent, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
-        
-        greenPlot <- data.frame(week = 1:max(data$week) , weekGreen = NA, studentGreen = NA)
-        greenPlot[match(names(studentGreen), greenPlot$week) , "studentGreen"] <- studentGreen
-        greenPlot[match(names(weekGreen), greenPlot$week) , "weekGreen"] <- weekGreen
-        
-        p6 <- qplot(data = greenPlot, y = weekGreen) + geom_line() 
-        p6 <- p6 + ylab("avg % green") + xlab("week") + coord_cartesian(ylim = c(min(c(weekGreen, studentGreen)*.6, na.rm = TRUE), 100))
-        p6 <- p6 + geom_point(size = 3,data = greenPlot, aes(y = studentGreen), colour = "red" )
+    
+    #make some plots, put them into a list to save for student reports
+      #student monarch discovery rate compared to average
+              monarchProb <- sapply(unique(data$week), 
+                                    function(x) sum (data[data$week == x , "nLTotal"]) / nrow(data[data$week == x ,]))
+              
+              studentMonarchProb <- sapply(unique(data$week), 
+                                         function(x) sum (dStudent[dStudent$week == x , "nLTotal"]) / nrow(dStudent[dStudent$week == x ,]))
+              monarchDetection <- data.frame(monarchProb = monarchProb, studentMonarchProb = studentMonarchProb)
+              
+              p1 <- qplot(data = monarchDetection, y = monarchProb) + geom_line() + ylab("p(monarch larva)") + xlab("week")+ ggtitle("Student comparison to average")
+              p1 <- p1 + geom_point(size = 3,data = monarchDetection, aes(y = studentMonarchProb), colour = "red" )
+              
+          #student egg discovery rate compared to average
+              eggProb <- sapply(unique(data$week), 
+                                    function(x) sum (data[data$week == x , "nEggs"]) / nrow(data[data$week == x ,]))
+              
+              studentEggProb <- sapply(unique(data$week), 
+                                           function(x) sum (dStudent[dStudent$week == x , "nEggs"]) / nrow(dStudent[dStudent$week == x ,]))
+              eggDetection <- data.frame(eggProb = eggProb, studentEggProb = studentEggProb)
+              
+              p2 <- qplot(data = eggDetection, y = eggProb) + geom_line() + ylab("p(egg)") + xlab("week")
+              p2 <- p2 + geom_point(size = 3,data = eggDetection, aes(y = studentEggProb), colour = "red" )
+              
+          #time per plant by week, average vs student
+              tripLevel <- data[match(sort(unique(data$trip.ID)), data$trip.ID) , ]
+              weeklyTimeAvg <- sapply(unique(data$week), function(z) 
+                weighted.mean( x = tripLevel[tripLevel$week == z ,"duration.min" ] /  tripLevel[tripLevel$week == z ,"milkweed.count" ] , 
+                             w = tripLevel[tripLevel$week == z ,"milkweed.count"], na.rm = TRUE))
+              
+              weeklyStudentAvg <-         sapply(unique(data$week), function(z) 
+                weighted.mean( x = tripStudent[tripStudent$week == z ,"duration.min" ] /  tripStudent[tripStudent$week == z ,"milkweed.count" ] , 
+                               w = tripStudent[tripStudent$week == z ,"milkweed.count"], na.rm = TRUE))
+              timeDevotion <- data.frame(weeklyTimeAvg, weeklyStudentAvg)
+              
+              p3 <- qplot(data = timeDevotion, y = weeklyTimeAvg) + geom_line() + ylab("minutes / plant") + xlab("week")
+              p3 <- p3 + geom_point(size = 3,data = timeDevotion, aes(y = weeklyStudentAvg), colour = "red" )
+              
+          #student number of plants censused per week
+              weekCount <- data.frame(week = 1:max(data$week), count = NA, cumMonarch = 0)
+              weekCount[match(names(table(dStudent$week)) , weekCount$week) , "count"] <- table(dStudent$week)
+              
+              p4 <- qplot(data = weekCount, x = weekCount$week , y = as.numeric(weekCount$count)) 
+                   p4  <- p4 + geom_line() + xlab("week") + ylab("plants per week") + ggtitle("Student data")
+                   p4 <- p4 + coord_cartesian(xlim = c(0, max(data$week))) + coord_cartesian(ylim = c(0, 1.2*max(weekCount$count, na.rm = TRUE))) 
+              
+          
+          #cumulative monarch eggs and larvae found on plants
+              monarchs <- with(dStudent, tapply(dStudent$monarchLoad, dStudent$week, sum))
+              weekCount[match(names(monarchs), weekCount$week) , "cumMonarch"] <- monarchs
+              weekCount$cumMonarch <- cumsum(weekCount$cumMonarch)
+              
+              p5 <- qplot(data = weekCount, x = weekCount$week , y = as.numeric(weekCount$cumMonarch)) 
+                  p5  <- p5 + geom_line() + xlab("week") + ylab("cumulat. monarchs") 
+                  p5 <- p5 + coord_cartesian(xlim = c(0, max(data$week))) + coord_cartesian(ylim = c(0, 1.2*max(weekCount$cumMonarch, na.rm = TRUE))) 
       
+                  head(data)
+              
+          #average percent green in each week compared to average
+              weekGreen <- with(data, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
+              studentGreen <- with(dStudent, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
+              
+              greenPlot <- data.frame(week = 1:max(data$week) , weekGreen = NA, studentGreen = NA)
+              greenPlot[match(names(studentGreen), greenPlot$week) , "studentGreen"] <- studentGreen
+              greenPlot[match(names(weekGreen), greenPlot$week) , "weekGreen"] <- weekGreen
+              
+              p6 <- qplot(data = greenPlot, y = weekGreen) + geom_line() 
+              p6 <- p6 + ylab("avg % green") + xlab("week") + coord_cartesian(ylim = c(min(c(weekGreen, studentGreen)*.6, na.rm = TRUE), 100))
+              p6 <- p6 + geom_point(size = 3,data = greenPlot, aes(y = studentGreen), colour = "red" )
+            
+          #plot time of observations for each student over overall time of day histogram
+          #function to make a vector of times for a given trip, and store it in a global variable
+              obsTime <- list()
+              listTimes <- function(trip, d){
+                singleTrip <- d[d$trip.ID==trip , ]
+                obsTime[[trip]]  <- seq(from = as.POSIXct(singleTrip[1, "start.time"], format="%H:%M"),
+                                        to = as.POSIXct(singleTrip[1, "end.time"], format="%H:%M"), 
+                                        length.out = nrow(singleTrip))
+              }
+              
+              #list trip ID's that have start and end times (ie remove NA's)
+              #done by summing rows across is.na statement to detect NA in either column
+              tripsWithTime <- unique(data$trip.ID)[ rowSums(is.na(data[match(unique(data$trip.ID) , data$trip.ID) , 
+                                                                        c("start.time" , "end.time")])) < 1] 
+              
+              #apply time listing function to all trips a student went on, make it a dataframe
+              studentObsTimes <- do.call(c, list(sapply(unique(dStudent$trip.ID), function (x) listTimes(x, d=dStudent))))
+              studentObsTimes <- data.frame(time = studentObsTimes)
+              
+              #apply time listing function to all trips with times reported, make it a dataframe
+              allObsTimes <- do.call(c, sapply(tripsWithTime, function (x) listTimes(x, d=data)))
+              allObsTimes <- data.frame(time = allObsTimes)
+              
+              #create histogram of with observation times of student, overlayed onto overall histogram
+              p7 <- ggplot() + geom_histogram(aes(x=time), colour="black", data=allObsTimes, bins = 24) 
+              p7 <- p7 + geom_histogram(aes(x=time), colour="red",data=studentObsTimes)
+              p7
+          
+        
         #create a list of all plots for this student, append that list of plots for later plotting, and plot them now
-        student.plots[[student.name]] <<- list(p1, p2, p3, p4, p5, p6)
-       # do.call(grid.arrange, student.plots[[student.name]])
+        compare.plots[[student.name]] <<- list(p1, p2, p3, p6, p7)
+        student.plots[[student.name]] <<- list( p4, p5)
   #convert summary list to data.frame and print
   data.frame(student)
-}
+  #plot individual student plots (commented out to silence output when all are run together)
+  #do.call(grid.arrange, c(student.plots[[student.name]] ,))
+  }
 
-student.summary("Louie Yang")
-
-#make a list of names, remove NA value
-name.list <- unique(c(as.character(trip$name.1), as.character(trip$name.2)))
-name.list <- sort(name.list[!is.na(name.list)])
-
-#apply student.summary function to all students, create a data frame form the result
-student.df <- data.frame(sapply( name.list, function(x) student.summary(x)))
-
-#add a column of averages using a mean function that can deal with NaN's and NA's
-student.df$average <- sapply(1:nrow(student.df), function(x) mean(unlist( student.df[x,]), na.rm = TRUE))
-
-#remove spaces for pdf file names, add current date for report and pdf extension
-file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
-                         gsub(" ", "_", name.list), 
-                         ".pdf", sep = "")
-
-#this is the loop to run the report generating script
-#for each student name in name.list, it generates a report including summary statistics from
-#student.df and plots several things
-<<<<<<< Updated upstream
-setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
-=======
-
-#get the last week interval
-last.week <- sort(seq( min(data$julian.date), min(data$julian.date) + max(data$week)*7, by = 7), decreasing = TRUE)[c(2,1)]
-last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
-last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
-
-setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
->>>>>>> Stashed changes
-    for(i in 1:length(name.list)){
-            student.name <- name.list[i]
-            render(input = "student report.Rmd", output_format = "pdf_document", 
-                  output_file = file.names.list[i] )
-            }
-#switch back to main working dir
-setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")
+#apply the function of all students, and create student reports
+        #make a list of names, remove NA value
+        name.list <- unique(c(as.character(trip$name.1), as.character(trip$name.2)))
+        name.list <- sort(name.list[!is.na(name.list)])
+        
+        #apply student.summary function to all students, create a data frame form the result
+        student.df <- data.frame(sapply( name.list, function(x) student.summary(x)))
+        
+        #add a column of averages using a mean function that can deal with NaN's and NA's
+        student.df$average <- sapply(1:nrow(student.df), function(x) mean(unlist( student.df[x,]), na.rm = TRUE))
+        
+        #remove spaces for pdf file names, add current date for report and pdf extension
+        file.names.list <- paste(format(Sys.time(), '%m-%d-%Y'),"_",
+                                 gsub(" ", "_", name.list), 
+                                 ".pdf", sep = "")
+        
+        #this is the loop to run the report generating script
+        #for each student name in name.list, it generates a report including summary statistics from
+        #student.df and plots several things
+        
+        #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
+        
+        #get the last week interval
+        last.week <- sort(seq( min(data$julian.date), min(data$julian.date) + max(data$week)*7, by = 7), decreasing = TRUE)[c(2,1)]
+        last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
+        last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
+        
+        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
+            for(i in 1:length(name.list)){
+                    student.name <- name.list[i]
+                    render(input = "student report.Rmd", output_format = "pdf_document", 
+                          output_file = file.names.list[i] )
+                    }
+        #switch back to main working dir
+        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015")
 
 ###########
 ##plots
