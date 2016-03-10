@@ -18,7 +18,6 @@ print("Did you miss these plants? : ", missedPlants[[student.name]])
 #print all the plots that were made in student summary, and compile into a single grid of plots
 do.call(grid.arrange, c(compare.plots[[student.name]] , student.plots[[student.name]]))
 
-
 ```
 
 

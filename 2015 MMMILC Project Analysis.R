@@ -148,10 +148,6 @@ Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengt
 data$catLengths <- lapply(Llist, unlist)
 
 
-
-
-
-
 #function to call all observations from a student and summarize
 #add elements within this function to add rows to student summary table
 ###################################################
@@ -253,8 +249,7 @@ student.summary <- function(student.name){
                   p5  <- p5 + geom_line() + xlab("week") + ylab("cumulat. monarchs") 
                   p5 <- p5 + coord_cartesian(xlim = c(0, max(data$week))) + coord_cartesian(ylim = c(0, 1.2*max(weekCount$cumMonarch, na.rm = TRUE))) 
       
-                  head(data)
-              
+
           #average percent green in each week compared to average
               weekGreen <- with(data, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
               studentGreen <- with(dStudent, tapply(percent.green, week, function(x) mean(x, na.rm = TRUE)))
@@ -279,31 +274,31 @@ student.summary <- function(student.name){
               
               #list trip ID's that have start and end times (ie remove NA's)
               #done by summing rows across is.na statement to detect NA in either column
-              tripsWithTime <- unique(data$trip.ID)[ rowSums(is.na(data[match(unique(data$trip.ID) , data$trip.ID) , 
-                                                                        c("start.time" , "end.time")])) < 1] 
+             # tripsWithTime <- unique(data$trip.ID)[ rowSums(is.na(data[match(unique(data$trip.ID) , data$trip.ID) , 
+                                                                        #c("start.time" , "end.time")])) < 1] 
               
               #apply time listing function to all trips a student went on, make it a dataframe
-              studentObsTimes <- do.call(c, list(sapply(unique(dStudent$trip.ID), function (x) listTimes(x, d=dStudent))))
-              studentObsTimes <- data.frame(time = studentObsTimes)
+              #studentObsTimes <- do.call(unlist, sapply(unique(dStudent$trip.ID), function (x) listTimes(x, d=dStudent)))
+              #studentObsTimes <- data.frame(time = studentObsTimes)
               
               #apply time listing function to all trips with times reported, make it a dataframe
-              allObsTimes <- do.call(c, sapply(tripsWithTime, function (x) listTimes(x, d=data)))
-              allObsTimes <- data.frame(time = allObsTimes)
+             # allObsTimes <- do.call(c, sapply(tripsWithTime, function (x) listTimes(x, d=data)))
+              #allObsTimes <- data.frame(time = allObsTimes)
               
               #create histogram of with observation times of student, overlayed onto overall histogram
-              p7 <- ggplot() + geom_histogram(aes(x=time), colour="black", data=allObsTimes, bins = 24) 
-              p7 <- p7 + geom_histogram(aes(x=time), colour="red",data=studentObsTimes)
-              p7
-          
-        
+             # p7 <- ggplot() + geom_histogram(aes(x=time), colour="black", data=allObsTimes, bins = 24) 
+            #  p7 <- p7 + geom_histogram(aes(x=time), colour="red",data=studentObsTimes)
+             # p7
+    
+  
         #create a list of all plots for this student, append that list of plots for later plotting, and plot them now
-        compare.plots[[student.name]] <<- list(p1, p2, p3, p6, p7)
+        compare.plots[[student.name]] <<- list(p1, p2, p3, p6)
         student.plots[[student.name]] <<- list( p4, p5)
   #convert summary list to data.frame and print
   data.frame(student)
   #plot individual student plots (commented out to silence output when all are run together)
-  #do.call(grid.arrange, c(student.plots[[student.name]] ,))
-  }
+ # do.call(grid.arrange, c(compare.plots[[student.name]], student.plots[[student.name]]))
+    }
 
 #apply the function of all students, and create student reports
         #make a list of names, remove NA value
@@ -326,7 +321,6 @@ student.summary <- function(student.name){
         #student.df and plots several things
         
         #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
-        
         #get the last week interval
         last.week <- sort(seq( min(data$julian.date), min(data$julian.date) + max(data$week)*7, by = 7), decreasing = TRUE)[c(2,1)]
         last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
