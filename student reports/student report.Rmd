@@ -9,11 +9,14 @@ output: pdf_document
 #print the students column along with the last column in student.df (average)
 kable(student.df[ , c(i , ncol(student.df))])
 ```
+
 ```{r, echo = FALSE}
 #print the students column along with the last column in student.df (average)
-print("Did you miss these plants? : ", missedPlants[[student.name]])
-
+paste("Possible missed plants last week:")
+print(missedPlants[[i]])
 ```
+
+
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
 #print all the plots that were made in student summary, and compile into a single grid of plots
 do.call(grid.arrange, c(compare.plots[[student.name]] , student.plots[[student.name]]))

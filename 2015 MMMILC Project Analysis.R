@@ -148,6 +148,9 @@ Llist <- mapply( c, data$L1lengths, data$L2lengths, data$L3lengths, data$L4lengt
 data$catLengths <- lapply(Llist, unlist)
 
 
+
+
+
 #function to call all observations from a student and summarize
 #add elements within this function to add rows to student summary table
 ###################################################
@@ -191,7 +194,7 @@ student.summary <- function(student.name){
     #print any plants missing from the sequence
       plantsRecentWeek <- sort(dStudent[dStudent$week==max(dStudent$week),"milkweed.ID"])
       completeSeries <- min(plantsRecentWeek):max(plantsRecentWeek)
-      missedPlants[[student.name]] <- c(completeSeries[which(is.na(match(completeSeries , plantsRecentWeek)))])
+      missedPlants[[student.name]] <<- c(completeSeries[which(is.na(match(completeSeries , plantsRecentWeek)))])
 
     
     #make some plots, put them into a list to save for student reports
@@ -261,38 +264,9 @@ student.summary <- function(student.name){
               p6 <- qplot(data = greenPlot, y = weekGreen) + geom_line() 
               p6 <- p6 + ylab("avg % green") + xlab("week") + coord_cartesian(ylim = c(min(c(weekGreen, studentGreen)*.6, na.rm = TRUE), 100))
               p6 <- p6 + geom_point(size = 3,data = greenPlot, aes(y = studentGreen), colour = "red" )
-            
-          #plot time of observations for each student over overall time of day histogram
-          #function to make a vector of times for a given trip, and store it in a global variable
-              obsTime <- list()
-              listTimes <- function(trip, d){
-                singleTrip <- d[d$trip.ID==trip , ]
-                obsTime[[trip]]  <- seq(from = as.POSIXct(singleTrip[1, "start.time"], format="%H:%M"),
-                                        to = as.POSIXct(singleTrip[1, "end.time"], format="%H:%M"), 
-                                        length.out = nrow(singleTrip))
-              }
-              
-              #list trip ID's that have start and end times (ie remove NA's)
-              #done by summing rows across is.na statement to detect NA in either column
-             # tripsWithTime <- unique(data$trip.ID)[ rowSums(is.na(data[match(unique(data$trip.ID) , data$trip.ID) , 
-                                                                        #c("start.time" , "end.time")])) < 1] 
-              
-              #apply time listing function to all trips a student went on, make it a dataframe
-              #studentObsTimes <- do.call(unlist, sapply(unique(dStudent$trip.ID), function (x) listTimes(x, d=dStudent)))
-              #studentObsTimes <- data.frame(time = studentObsTimes)
-              
-              #apply time listing function to all trips with times reported, make it a dataframe
-             # allObsTimes <- do.call(c, sapply(tripsWithTime, function (x) listTimes(x, d=data)))
-              #allObsTimes <- data.frame(time = allObsTimes)
-              
-              #create histogram of with observation times of student, overlayed onto overall histogram
-             # p7 <- ggplot() + geom_histogram(aes(x=time), colour="black", data=allObsTimes, bins = 24) 
-            #  p7 <- p7 + geom_histogram(aes(x=time), colour="red",data=studentObsTimes)
-             # p7
-    
-  
+
         #create a list of all plots for this student, append that list of plots for later plotting, and plot them now
-        compare.plots[[student.name]] <<- list(p1, p2, p3, p6)
+        compare.plots[[student.name]] <<- list(p1, p2, p3, p6, p7)
         student.plots[[student.name]] <<- list( p4, p5)
   #convert summary list to data.frame and print
   data.frame(student)
@@ -350,26 +324,34 @@ add.plot.instar.data(unlist(data$L3lengths), 3)
 add.plot.instar.data(unlist(data$L4lengths), 4)
 add.plot.instar.data(unlist(data$L5lengths), 5)
 
+#a summary report for the project
+###################################################
 
-###plots
-#average larval length by week
-#egg count by week
-#larvae count by week
-#monarch load (egg + larveae) by week
 
-#cumulative versions by day (monarchs per plant on plants observed)
+#plot time of observations for overall time of day histogram
+#function to make a vector of times for a given trip, and store it in a global variable
+tripsWithTime <- unique(data$trip.ID)[ rowSums(is.na(data[match(unique(data$trip.ID) , data$trip.ID) , c("start.time" , "end.time")])) < 1] 
+obsTime <- list()
+listTimes <- function(trip, d){
+  singleTrip <- d[d$trip.ID==trip , ]
+  obsTime[[trip]]  <- seq(from = as.POSIXct(singleTrip[1, "start.time"], format="%H:%M"),
+                          to = as.POSIXct(singleTrip[1, "end.time"], format="%H:%M"), 
+                          length.out = nrow(singleTrip))
+}
 
+allObsTimes <- data.frame(time = do.call(c, sapply(tripsWithTime, function (x) listTimes(x, d=data))))
+p7 <- ggplot() + geom_histogram(aes(x=time), colour="black", data=allObsTimes, bins = 24)
 
 #plot of milkweed.count by week
 milkweed.count.by.week<-aggregate(milkweed.count~week,sum,data=trip);milkweed.count.by.week
 p1 <- ggplot(milkweed.count.by.week, aes(x=week, y=milkweed.count))
-p1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 400))+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("milkweed count from the trip log")
+p1 <- p1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 400))+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("milkweed count from the trip log")
 
 
 #plot of milkweed.obs by week
 milkweed.obs.by.week<-aggregate(obs.ID~week,length,data=data)
 p1.1 <- ggplot(milkweed.obs.by.week, aes(x=week, y=obs.ID))
-p1.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 400))+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("milkweed count from the data set")
+p1.1 <- p1.1+geom_point(size=6,col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 400))+scale_x_continuous(breaks=c(1:max(trip$week)))+ylab("milkweed count from the data set")
 
 
 #How long did it take to measure each milkweed?
@@ -445,16 +427,16 @@ with(cum.eggs.by.day, plot(julian.date, nEggs, type = "l"))
 
 #plot phenology-ontogeny landscape plotting function
 phen.ont.landscape <- function(interval.as.char){
-    cat.length <- tapply(data$catLengths ,  cut(data$date, interval.as.char) ,    
+    cat.length <- tapply(data$catLengths ,  cut(data$date.x, interval.as.char) ,    
                          function(x) mean(as.numeric(unlist(x)), na.rm=TRUE))
     
-    cat.se <-  tapply(data$catLengths ,  cut(data$date, interval.as.char) ,    
+    cat.se <-  tapply(data$catLengths ,  cut(data$date.x, interval.as.char) ,    
                       function(x) std.err(as.numeric(unlist(x))))
     
-    plant.area <- tapply(data$total.stem.area ,  cut(data$date, interval.as.char) ,    
+    plant.area <- tapply(data$total.stem.area ,  cut(data$date.x, interval.as.char) ,    
                      function(x) mean(as.numeric(x), na.rm=TRUE))
     
-    plant.se <-  tapply(data$total.stem.area ,  cut(data$date, interval.as.char) ,    
+    plant.se <-  tapply(data$total.stem.area ,  cut(data$date.x, interval.as.char) ,    
                       function(x) std.err(as.numeric(x)))
     
     plot(as.Date(names(cat.length)), cat.length, type = "b", pch = 16, xlab = "date")
