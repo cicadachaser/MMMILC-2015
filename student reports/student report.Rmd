@@ -1,18 +1,26 @@
 ---
-title: "`r print(student.name)`"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+title: "`r format(student.name)`"
+date: "`r format(last.week)`"
 output: pdf_document
 ---
 
 
-```{r}
-summary(cars)
+```{r, echo = FALSE}
+#print the students column along with the last column in student.df (average)
+kable(student.df[ , c(i , ncol(student.df))])
 ```
 
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
+```{r, echo = FALSE}
+#print the students column along with the last column in student.df (average)
+paste("Possible missed plants last week:")
+print(missedPlants[[i]])
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+#print all the plots that were made in student summary, and compile into a single grid of plots
+do.call(grid.arrange, c(compare.plots[[student.name]] , student.plots[[student.name]]))
+
+```
+
+
