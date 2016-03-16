@@ -13,6 +13,12 @@
   library(gridExtra)
   library(ggmap)
   
+
+rm(list=ls())
+graphics.off()
+pardefault <- par(no.readonly = T)
+ 
+
 #se function that removes NA's
   std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
@@ -410,8 +416,8 @@ student.summary <- function(student.name){
           
           phenOntD <- as.data.frame(cbind(cat.length, cat.se, plant.area, plant.se))
           #this object is plotted directly in overall report script
-          p6 <- ggplot(data = phenOntD, aes(x = cat.length, y = plant.area)) + geom_path() + geom_point(col = "forestgreen") 
-
+          p6 <- ggplot(data = phenOntD, aes(x = cat.length, y = plant.area)) + geom_path() + geom_point(col = "forestgreen") +ggtitle("Phenology Ontogeny landscape")
+          p6 <- p6+geom_label(label = rownames(phenOntD))
 
       #mapping and spatial analysis
       
@@ -427,7 +433,7 @@ student.summary <- function(student.name){
           
           NDCmap<-ggmap(NDC, extent = "panel")
           #this object is plotted directly in overall report script
-          p7 <- NDCmap+geom_point(aes(x=longitude,y=latitude,color=transect),data=mw.locs)+ggtitle("Phenology Ontogeny landscape")
+          p7 <- NDCmap+geom_point(aes(x=longitude,y=latitude,color=transect),data=mw.locs)+ggtitle("Milkweed locations")
           
 
   #print report
