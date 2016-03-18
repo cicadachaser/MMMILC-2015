@@ -349,6 +349,7 @@ student.summary <- function(student.name){
     status.table <- rbind(weekStatus, overallStatus)
     
   #overall student rankings
+    student.df
     rankTable <- sort(table(c(as.character(data$name.1), as.character(data$name.2), as.character(data$name.3))), decreasing = TRUE)
     #this object goes to report
     rankTable <- data.frame("Milkweeds observed" = rankTable[1:10])
