@@ -1,12 +1,12 @@
 ---
 title: "MMMILC Summary Report"
-date: "`r Sys.time()`"
 output: pdf_document
+date: '`r Sys.time()`'
 ---
 
 ```{r, echo = FALSE}
 #overall and last weeks summary statistics
-kable(summStats, caption = "Summary Statistics", digits = 3)
+kable(summStats, caption = "Summary Statistics", digits = 2)
 ```
 
 ```{r, echo = FALSE}
@@ -16,7 +16,7 @@ kable(status.table, caption = "Milkweed Status")
 
 ```{r, echo = FALSE}
 #rank table for top 10 students
-kable(rankTable, caption = "Top Ten Students")
+kable(rankTable, caption = "Student Summary")
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
@@ -25,7 +25,13 @@ do.call(grid.arrange, c(weekSummPlots))
 
 ```
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
+#print the two time plots
+do.call(grid.arrange, c(timePlots))
+
+```
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
 #print the two big plots
 p6
 p7
 ```
+

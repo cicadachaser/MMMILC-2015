@@ -285,16 +285,19 @@ data$leaf.damage <- as.numeric(gsub("%", "", data$leaf.damage))
   summStats <- rbind("overall" = overall, "lastWeek" = lastWeek)
 
 #status counts
-  weekStatus <-table(data[data$week == max(data$week, na.rm = TRUE) , "milkweed.status"])
-  overallStatus <- table(data$milkweed.status)
+  weekStatus <-table( data$week, data$milkweed.status )
+  weekStatus <- cbind(weekStatus , "total" = rowSums(weekStatus))
+  overallStatus <- table(data$milkweedStatus)
+  status.table <- tail(weekStatus)
 #this object goes to report
   status.table <- rbind(weekStatus, overallStatus)
 
 #overall student rankings
-  rankTable <- sort(table(c(as.character(data$name.1), as.character(data$name.2), as.character(data$name.3))), decreasing = TRUE)
 #this object goes to report
-  rankTable <- data.frame("Milkweeds observed" = rankTable[1:10])
-
+  rankTable <- as.data.frame( t( student.df[, -ncol(student.df) ]) )
+  rankTable <- rankTable[ order(unlist(rankTable$totalPlants) , decreasing = TRUE), ]
+  rankTable <- head(rankTable, 20)
+  
 #plots
 #milkweed count by week
   milkweed.obs.by.week <- aggregate(milkweed.ID~week,length,data=data)
@@ -324,62 +327,77 @@ data$leaf.damage <- as.numeric(gsub("%", "", data$leaf.damage))
   p3<-ggplot(total.stem.len.by.week,aes(x=week,y=total.stem.len[,"mean"]))
   p3 <- p3+geom_point(col="forestgreen")+geom_line()+scale_x_continuous(breaks=c(1:max(data$week)))+ylab("total stem per plant (cm)")+geom_errorbar(p3.limits, width=0.2)
 
-
+  
+#catepillar growth
+ catLength.by.week<- as.data.frame(with( data, tapply(catLengths , week ,function(x) mean(as.numeric(unlist(x)), na.rm=TRUE))))
+ catLength.by.week$week <- 1:nrow(catLength.by.week)
+ colnames(catLength.by.week)[1]<-"mean"
+  p4 <- ggplot(data=catLength.by.week)
+  p4 <- p4+geom_point(aes(x=catLength.by.week[,"week"], y=catLength.by.week[,"mean"]), col="purple")
+  p4 <- p4+scale_x_continuous(breaks=c(1:max(data$week)))+ylab("avg catepillar (mm)") + geom_line(aes(x=catLength.by.week[,"week"], y=catLength.by.week[,"mean"]))
+ 
 #plot egg counts by week
   eggs.by.week<-aggregate(nEggs~week,sum,data=data)
-  p4 <- ggplot(eggs.by.week, aes(x=week, y=nEggs))
-  p4 <- p4+geom_point(col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  p5 <- ggplot(eggs.by.week, aes(x=week, y=nEggs))
+  p5 <- p5+geom_point(col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
     scale_x_continuous(breaks=c(1:max(data$week)))+ylab("Eggs per week")
 
 #plot larvae counts by week
   larvae.by.week<-aggregate(nLTotal~week,sum,data=data)
-  p5 <- ggplot(larvae.by.week, aes(x=week, y=nLTotal))
-  p5 <- p5+geom_point(col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
+  p6 <- ggplot(larvae.by.week, aes(x=week, y=nLTotal))
+  p6 <- p6+geom_point(col="red")+geom_line()+geom_hline(yintercept=318,lty='dashed')+coord_cartesian(ylim = c(0, 50))+
     scale_x_continuous(breaks=c(1:max(data$week)))+ylab("Larvae per week")
 
 #put weekly plots together for overall report
-  weekSummPlots <- list(p1,p2,p3,p4,p5)
+  weekSummPlots <- list(p1,p2,p3,p4,p5, p6)
 
 
 #plot phenology-ontogeny landscape plotting
-
-  cat.length <- as.numeric(tapply(data$catLengths ,  cut(data$date.time, "2 weeks") ,    
-                                function(x) mean(as.numeric(unlist(x)), na.rm=TRUE)))
-
-  cat.se <-  as.numeric(tapply(data$catLengths ,  cut(data$date.time, "2 weeks") ,    
-                             function(x) std.err(as.numeric(unlist(x)))))
-
-  plant.area <- as.numeric(tapply(data$total.stem.area ,  cut(data$date.time, "2 weeks") ,    
-                                function(x) mean(as.numeric(x), na.rm=TRUE)))
-
-  plant.se <-  as.numeric(tapply(data$total.stem.area ,  cut(data$date.time, "2 weeks") ,    
-                               function(x) std.err(as.numeric(x))))
-
-  phenOntD <- as.data.frame(cbind(cat.length, cat.se, plant.area, plant.se))
-#this object is plotted directly in overall report script
-  p6 <- ggplot(data = phenOntD, aes(x = cat.length, y = plant.area)) + geom_path() + geom_point(col = "forestgreen") +ggtitle("Phenology Ontogeny landscape")
-  p6 <- p6+geom_label(label = rownames(phenOntD))
+    
+      cat.length <- as.numeric(tapply(data$catLengths ,  cut(data$date.time, "2 weeks") ,    
+                                    function(x) mean(as.numeric(unlist(x)), na.rm=TRUE)))
+    
+      cat.se <-  as.numeric(tapply(data$catLengths ,  cut(data$date.time, "2 weeks") ,    
+                                 function(x) std.err(as.numeric(unlist(x)))))
+    
+      plant.area <- as.numeric(tapply(data$total.stem.area ,  cut(data$date.time, "2 weeks") ,    
+                                    function(x) mean(as.numeric(x), na.rm=TRUE)))
+    
+      plant.se <-  as.numeric(tapply(data$total.stem.area ,  cut(data$date.time, "2 weeks") ,    
+                                   function(x) std.err(as.numeric(x))))
+    
+      dates <- as.character(format( as.Date(sort(unique(cut(data$date.time, "2 weeks")))) , format = "%m-%d"))
+    
+      phenOntD <- as.data.frame(cbind(cat.length, cat.se, plant.area, plant.se, dates))
+    #this object is plotted directly in overall report script
+      p6 <- ggplot(data = phenOntD, aes(x = cat.length, y = plant.area)) + geom_path() + geom_point(col = "forestgreen") +ggtitle("Phenology Ontogeny landscape")
+      p6 <- p6+geom_label(label = dates)
 
 #mapping and spatial analysis
-#go up a directory for spatial data
+    #go up a directory for spatial data
+    
+      mw.locs$transect<-as.factor(mw.locs$transect)
+      mw.locs <-mw.locs[mw.locs$transect==2 , ]
+      lowerleftlong=-121.765274
+      lowerleftlat= 38.566483
+      upperrightlong=-121.747067
+      upperrightlat= 38.576428
+      
+      NDC<-get_map(location=c(lowerleftlong,lowerleftlat,upperrightlong,upperrightlat),maptype="terrain",source="google")
+    
+    #Assign an error status to any milkweeds missing last week, keep other statuses
+      mw.locs$recentStatus <- "ERROR"
+      mw.locs$recentStatus[match(unique(data[data$week==max(data$week) ,"milkweed.ID" ]) , mw.locs$name)] <- data[data$week==max(data$week), "milkweed.status"] 
+    
+      NDCmap<-ggmap(NDC, extent = "panel")
+    #this object is plotted directly in overall report script
+      p7 <- NDCmap+geom_point(aes(x=longitude,y=latitude,color=recentStatus),data=mw.locs)+ggtitle("Milkweeds surveyed last week")
 
-  mw.locs$transect<-as.factor(mw.locs$transect)
 
-  lowerleftlong=-121.765274
-  lowerleftlat= 38.566483
-  upperrightlong=-121.747067
-  upperrightlat= 38.576428
-  
-  NDC<-get_map(location=c(lowerleftlong,lowerleftlat,upperrightlong,upperrightlat),maptype="terrain",source="google")
-
-#just the ones seen last week
-  nw.locs.week <- mw.locs[match(unique(data[data$week==max(data$week) ,"milkweed.ID" ]) , mw.locs$name) , ]
-
-  NDCmap<-ggmap(NDC, extent = "panel")
-#this object is plotted directly in overall report script
-  p7 <- NDCmap+geom_point(aes(x=longitude,y=latitude,color=transect),data=nw.locs.week)+ggtitle("Milkweeds surveyed last week")
-
-
+#time of observations: day of week, time of day
+p8 <- qplot(weekdays(data$date.time))
+p9 <- qplot(data$date.time$hour)
+timePlots <- list(p8, p9)
 #print report
   render(input = "overall report.Rmd", output_format = "pdf_document", 
        output_file = paste(format(Sys.time(), "%m-%d-%Y"), " overall report.pdf", sep = "" ))
