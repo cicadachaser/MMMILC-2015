@@ -23,9 +23,9 @@ pardefault <- par(no.readonly = T)
   std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
 #set wd and load data
-  setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
+  #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
   #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
-  #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
+  setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
   #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
 
   trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
@@ -301,20 +301,19 @@ student.summary <- function(student.name){
         #for each student name in name.list, it generates a report including summary statistics from
         #student.df and plots several things
         
-        #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
         #get the last week interval
         last.week <- sort(seq( min(data$julian.date), min(data$julian.date) + max(data$week)*7, by = 7), decreasing = TRUE)[c(2,1)]
         last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
         last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
         
-        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
+        setwd("student reports")
             for(i in 1:length(name.list)){
                     student.name <- name.list[i]
                     render(input = "student report.Rmd", output_format = "pdf_document", 
                           output_file = file.names.list[i] )
                     }
         #switch back to main working dir
-        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015")
+        setwd(..)
 
 ##################################################
 #overall summary report
@@ -438,10 +437,10 @@ student.summary <- function(student.name){
           
 
   #print report
-      setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")  
+      setwd("student reports")  
       render(input = "overall report.Rmd", output_format = "pdf_document", 
            output_file = paste(format(Sys.time(), "%m-%d-%Y"), " overall report.pdf", sep = "" ))
-      setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015")  
+      setwd(..)  
           
 #unused plot
 #a function to add data to density graph, both density estimate and points
