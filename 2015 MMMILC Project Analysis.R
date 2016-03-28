@@ -301,20 +301,22 @@ student.summary <- function(student.name){
         #for each student name in name.list, it generates a report including summary statistics from
         #student.df and plots several things
         
-        #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
         #get the last week interval
         last.week <- sort(seq( min(data$julian.date), min(data$julian.date) + max(data$week)*7, by = 7), decreasing = TRUE)[c(2,1)]
         last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
         last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
         
         setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
+
             for(i in 1:length(name.list)){
                     student.name <- name.list[i]
                     render(input = "studentreport.Rmd", output_format = "html_document", 
                           output_file = file.names.list[i] )
                     }
         #switch back to main working dir
+
         setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")
+
 
 ##################################################
 #overall summary report
@@ -349,6 +351,7 @@ student.summary <- function(student.name){
     status.table <- rbind(weekStatus, overallStatus)
     
   #overall student rankings
+    student.df
     rankTable <- sort(table(c(as.character(data$name.1), as.character(data$name.2), as.character(data$name.3))), decreasing = TRUE)
     #this object goes to report
     rankTable <- data.frame("Milkweeds observed" = rankTable[1:10])
@@ -437,10 +440,12 @@ student.summary <- function(student.name){
           
 
   #print report
+
       setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")  
       render(input = "overall report.Rmd", output_format = "html_document", 
            output_file = paste(format(Sys.time(), "%m-%d-%Y"), " overall report.pdf", sep = "" ))
       setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")  
+
           
 #unused plot
 #a function to add data to density graph, both density estimate and points
