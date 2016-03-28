@@ -23,10 +23,10 @@ pardefault <- par(no.readonly = T)
   std.err <- function(x) sd(x[!is.na(x)])/sqrt(length(x[!is.na(x)]))
 
 #set wd and load data
-  setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
+  #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/") #marshall laptop
   #setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/")
   #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY SP4
-  #setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
+  setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015") #LHY desktop
 
   trip<-read.csv("trip 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #trip log
   data<-read.csv("data 2016-02-09.csv",header=T,strip.white=T,na.strings= c(" ", "")) #observations
@@ -307,14 +307,14 @@ student.summary <- function(student.name){
         last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
         last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
         
-        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")
+        setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
             for(i in 1:length(name.list)){
                     student.name <- name.list[i]
-                    render(input = "student report.Rmd", output_format = "pdf_document", 
+                    render(input = "studentreport.Rmd", output_format = "html_document", 
                           output_file = file.names.list[i] )
                     }
         #switch back to main working dir
-        setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015")
+        setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")
 
 ##################################################
 #overall summary report
@@ -437,10 +437,10 @@ student.summary <- function(student.name){
           
 
   #print report
-      setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015/student reports")  
-      render(input = "overall report.Rmd", output_format = "pdf_document", 
+      setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")  
+      render(input = "overall report.Rmd", output_format = "html_document", 
            output_file = paste(format(Sys.time(), "%m-%d-%Y"), " overall report.pdf", sep = "" ))
-      setwd("/Users/mmcmunn/Desktop/GitHub/MMMILC-2015")  
+      setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")  
           
 #unused plot
 #a function to add data to density graph, both density estimate and points

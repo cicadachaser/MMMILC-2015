@@ -1,7 +1,7 @@
 ---
 title: "`r format(student.name)`"
 date: "`r format(last.week)`"
-output: pdf_document
+output: html_document
 ---
 
 
