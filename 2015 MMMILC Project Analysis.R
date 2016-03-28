@@ -306,16 +306,16 @@ student.summary <- function(student.name){
         last.week <- format(as.Date(last.week, origin=as.Date("2015-01-01")) ,  '%d %b')
         last.week <- paste("week", " ", max(data$week), ": ", last.week[1], " - ",last.week[2], sep = "" )
         
-        setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")
+        setwd("student reports")
 
             for(i in 1:length(name.list)){
                     student.name <- name.list[i]
-                    render(input = "studentreport.Rmd", output_format = "html_document", 
+                    render(input = "student_report.Rmd", output_format = "pdf_document", 
                           output_file = file.names.list[i] )
                     }
         #switch back to main working dir
 
-        setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")
+        setwd("..")
 
 
 ##################################################
@@ -441,10 +441,10 @@ student.summary <- function(student.name){
 
   #print report
 
-      setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015\\student reports")  
-      render(input = "overall report.Rmd", output_format = "html_document", 
-           output_file = paste(format(Sys.time(), "%m-%d-%Y"), " overall report.pdf", sep = "" ))
-      setwd("C:\\Users\\louie\\Documents\\GitHub\\MMMILC-2015")  
+      setwd("student reports")  
+      render(input = "overall_report.Rmd", output_format = "pdf_document", 
+           output_file = paste(format(Sys.time(), "%m-%d-%Y"), "overall report.pdf", sep = "" ))
+      setwd("..")  
 
           
 #unused plot
